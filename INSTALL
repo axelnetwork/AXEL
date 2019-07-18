@@ -1,0 +1,13 @@
+Building AXEL
+
+Use the autogen script to prepare the build environment.
+
+    ./autogen.sh
+    ./configure --disable-tests --disable-bench
+    make -j$(nproc)
+
+Always verify the signatures and checksums.
+
+See doc/build-*.md for instructions on building axeld,
+the intended-for-services, no-graphical-interface, reference
+implementation of axel.

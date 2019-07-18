@@ -1,0 +1,26 @@
+# /etc/conf.d/axeld: config file for /etc/init.d/axeld
+
+# Config file location
+#BITCOIND_CONFIGFILE="/etc/axel/axel.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
+#BITCOIND_PIDDIR="/var/run/axeld"
+
+# What filename to give the pidfile
+#BITCOIND_PIDFILE="${BITCOIND_PIDDIR}/axeld.pid"
+
+# Where to write axeld data (be mindful that the blockchain is large)
+#BITCOIND_DATADIR="/var/lib/axeld"
+
+# User and group to own axeld process
+#BITCOIND_USER="axel"
+#BITCOIND_GROUP="axel"
+
+# Path to axeld executable
+#BITCOIND_BIN="/usr/bin/axeld"
+
+# Nice value to run axeld under
+#BITCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+BITCOIND_OPTS=""

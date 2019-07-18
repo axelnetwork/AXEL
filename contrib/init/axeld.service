@@ -1,0 +1,26 @@
+[Unit]
+Description=axel's distributed currency daemon
+After=network.target
+
+[Service]
+User=axel
+Group=axel
+
+Type=forking
+PIDFile=/var/lib/axeld/axeld.pid
+
+ExecStart=/usr/bin/axeld -daemon -pid=/var/lib/axeld/axeld.pid \
+          -conf=/etc/axel/axel.conf -datadir=/var/lib/axeld
+
+ExecStop=-/usr/bin/axel-cli -conf=/etc/axel/axel.conf \
+         -datadir=/var/lib/axeld stop
+
+Restart=always
+PrivateTmp=true
+TimeoutStopSec=60s
+TimeoutStartSec=2s
+StartLimitInterval=120s
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=axel
+Comment=AXEL P2P Cryptocurrency
+Exec=axel-qt %u
+Terminal=false
+Type=Application
+Icon=axel128
+MimeType=x-scheme-handler/axel;
+Categories=Office;Finance;
+Name[ru]=axel-qt.desktop
