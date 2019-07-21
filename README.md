@@ -1,8 +1,8 @@
 AXEL Core integration/staging repository
 ======================================
-More information at [AXEL site](https://www.axel.org)
+More information at [AXEL site](https://axel.network/).
 
-Join to our group at [Discord](https://discordapp.com/channels/407699573381791755/407699573381791757)
+Join to our group at [Discord](https://discordapp.com/channels/407699573381791755/407699573381791757).
 
 ***
 
