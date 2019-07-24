@@ -45,26 +45,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QScrollArea" name="scrollArea">
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOn</enum>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="scrollAreaWidgetContents">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>480</width>
-          <height>76</height>
-         </rect>
-        </property>        
-       </widget>
-      </widget>
-     </item>
-     <item>
       <widget class="QDialogButtonBox" name="okButton">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

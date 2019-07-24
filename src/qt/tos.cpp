@@ -1,6 +1,5 @@
 // Copyright (c) 2018-2019 The AXEL Core developers
 
-
 #include "tos.h"
 #include "ui_tos.h"
 
@@ -10,6 +9,8 @@
 
 #include <QSettings>
 #include <QPushButton>
+#include <QScrollBar>
+#include <QDebug>
 #include <QFile>
 
 QString TosInfo()
@@ -33,20 +34,24 @@ QString TosInfo()
 Tos::Tos(QWidget* parent) : QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
                                 ui(new Ui::Tos)
 {
-    	ui->setupUi(this);  
+    ui->setupUi(this);  
 	
-        /// HTML-format tos message from the htm file
-        QString tosInfo = TosInfo();
-
-        ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
+    /// HTML-format tos message from the htm file
+    QString tosInfo = TosInfo();
 	ui->tosMessage->setText(tosInfo);
-
-        ui->tosMessage->moveCursor(QTextCursor::Start);
-        
-        ui->scrollArea->setVisible(false);
-        
-	ui->okButton->button(QDialogButtonBox::Ok)->setText("Accept");  
+    ui->tosMessage->moveCursor(QTextCursor::Start);        
+    ui->okButton->button(QDialogButtonBox::Ok)->setText("Accept");  
+ 	installEventFilter(this);
+	
+	QScrollBar *pScrollBar = ui->tosMessage->verticalScrollBar();
+    if (pScrollBar != NULL)
+	{
+		ui->tosMessage->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+		connect(pScrollBar,SIGNAL(valueChanged(int)),this,SLOT(valueChanged(int)));
+                ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(false);
+	}
+	else
+		ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(true);
 }
 
 Tos::~Tos()
@@ -70,5 +75,32 @@ bool Tos::showTos()
 
     settings.setValue("fTosAccept", "true");
     return true;
+}
+
+bool Tos::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Show) // Special handling
+    {
+		//qDebug("Show event triggered");
+        const int max = ui->tosMessage->verticalScrollBar()->maximum();
+        int value = ui->tosMessage->verticalScrollBar()->value();
+		//qDebug()<<"in Tos::eventFilter value "<<value<<"max "<<max;
+		if(value == max)
+			ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(true);
+		else
+			ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(false);
+    }
+    return QDialog::eventFilter(obj, event);
+}
+
+
+void Tos::valueChanged(int value)
+{
+	const int max = ui->tosMessage->verticalScrollBar()->maximum();
+	//qDebug()<<"in Tos::valueChanged value "<<value<<"max "<<max;
+	if(value == max)
+		ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(true);
+	else
+		ui->okButton->button(QDialogButtonBox::Ok)->setEnabled(false);
 }
 

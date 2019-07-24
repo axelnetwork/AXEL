@@ -29,7 +29,12 @@ public:
      *
     */
     static bool showTos();
-   
+protected:
+		virtual bool eventFilter(QObject* obj, QEvent* event);
+
+private slots:
+    void valueChanged(int);
+ 
 private:
     Ui::Tos* ui;    
 };
