@@ -168,6 +168,46 @@ UniValue getaccountaddress(const UniValue& params, bool fHelp)
     return ret;
 }
 
+UniValue getaccountkeypair(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getaccountkeypair \"account\"\n"
+            "\nArguments:\n"
+            "1. \"account\"       (string, required) The account name for the address. It can also be set to the empty string \"\" to represent the default account. The account does not need to exist, it will be created and a new address created  if there is no account by the given name.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"addr\": n, (string) The account axel address\n"
+            "  \"priv\": n, (string) The private key\n"
+            "}\n"
+            "\nExamples:\n" +
+            HelpExampleCli("getaccountkeypair", "") + HelpExampleCli("getaccountkeypair", "\"\"") + HelpExampleCli("getaccountkeypair", "\"myaccount\"") + HelpExampleRpc("getaccountkeypair", "\"myaccount\""));
+
+    EnsureWalletIsUnlocked();
+
+    // Parse the account first so we don't generate a key if there's an error
+    string strAccount = AccountFromValue(params[0]);
+
+    pwalletMain->TopUpKeyPool();
+
+    // Generate a new key that is added to wallet
+    CPubKey newKey;
+    if (!pwalletMain->GetKeyFromPool(newKey))
+        throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+    CKeyID keyID = newKey.GetID();
+
+    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+    string strAddress = CBitcoinAddress(keyID).ToString();
+    CKey vchSecret;
+    if (!pwalletMain->GetKey(keyID, vchSecret))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
+
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("addr", strAddress));
+    obj.push_back(Pair("priv", CBitcoinSecret(vchSecret).ToString()));
+
+    return obj;
+}
 
 UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 {

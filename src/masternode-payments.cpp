@@ -65,9 +65,13 @@ bool IsBlockPayeeValid(const CBlock& block, int nBlockHeight)
 
     LogPrintf("Invalid mn payment detected %s\n", txNew.ToString().c_str());
 
+    //In pivx's master node sync design, there is no way to keep realtime sync on those winner catalogs, Dash
+    //already re-design it with voting meta stored in blocks, so for now MN payment enforcement checking is disabled
+    //for a better runtime stability.
+    /*
     if (IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT))
         return false;
-
+    */
     LogPrintf("Masternode payment enforcement is disabled, accepting block\n");
 
     return true;
