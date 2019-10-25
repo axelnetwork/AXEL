@@ -15,7 +15,8 @@
   </property>
   <property name="styleSheet">
    <string notr="true">
-background-color:#fff
+background-color:#fff;
+color:#000;
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

@@ -40,11 +40,11 @@ MultisigDialog::MultisigDialog(QWidget* parent) : QDialog(parent, Qt::WindowSyst
     ui->setupUi(this);
 
     ui->addAddressButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/add")));
-    ui->addMultisigButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/filesave")));
-    ui->importAddressButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/receiving_addresses")));
+    ui->addMultisigButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/filesave_white")));
+    ui->importAddressButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/receiving_addresses_white")));
     ui->addDestinationButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/add")));
     ui->createButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/export")));
-    ui->signButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit")));
+    ui->signButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit_white")));
     ui->commitButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/send")));
     ui->addPrivKeyButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/add")));
 
@@ -173,7 +173,7 @@ void MultisigDialog::on_addMultisigButton_clicked()
 void MultisigDialog::on_importAddressButton_clicked(){
     if(!model)
         return;
-
+  try{
     string sRedeem = ui->importRedeem->text().toStdString();
 
     if(sRedeem.empty()){
@@ -198,6 +198,13 @@ void MultisigDialog::on_importAddressButton_clicked(){
     // rescan to find txs associated with imported address
     pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
     pwalletMain->ReacceptWalletTransactions();
+  }catch(const runtime_error& e) {
+	ui->addMultisigStatus->setStyleSheet("QLabel { color: red; }");
+	ui->addMultisigStatus->setText(tr(e.what()));
+  }catch(const std::exception& e) {
+	ui->addMultisigStatus->setStyleSheet("QLabel { color: red; }");
+	ui->addMultisigStatus->setText("Some exception occur,Please enter correct value");
+  }
 }
 
 bool MultisigDialog::addMultisig(int m, vector<string> keys){
@@ -277,6 +284,9 @@ void MultisigDialog::on_createButton_clicked()
             }
         }
 
+		if (ui->destinationsList->count() < 1)
+            throw runtime_error("at least one destination address is needed");
+		
         //validate destinations
         bool validInput = true;
         for(int i = 0; i < ui->destinationsList->count(); i++){
@@ -322,7 +332,7 @@ void MultisigDialog::on_createButton_clicked()
             }
 
             //display status string
-            ui->createButtonStatus->setStyleSheet("QTextEdit{ color: black }");
+            //ui->createButtonStatus->setStyleSheet("QTextEdit{ color: black }");
 
             QString status(strprintf("Transaction has successfully created with a fee of %s.\n"
                                      "The transaction has been automatically imported to the sign tab.\n"
@@ -490,7 +500,7 @@ void MultisigDialog::on_signButton_clicked()
             this->multisigTx = tx;
         }
 
-        ui->signButtonStatus->setStyleSheet("QTextEdit{ color: black }");
+        //ui->signButtonStatus->setStyleSheet("QTextEdit{ color: black }");
         ui->signButtonStatus->setText(buildMultisigTxStatusString(fComplete, tx));
 
     }catch(const runtime_error& e){
@@ -547,6 +557,34 @@ CCoinsViewCache MultisigDialog::getInputsCoinsViewCache(const vector<CTxIn>& vin
     return view;
 }
 
+void MultisigDialog::signMultisigTx(CMutableTransaction& tx, const CKeyStore& keystore, vector<CTxIn> &oldVin, bool &fComplete){
+    //attempt to sign each input from local wallet
+    int nIn = 0;
+    for(CTxIn& txin : tx.vin){
+        //get inputs
+        CTransaction txVin;
+        uint256 hashBlock;
+        if (!GetTransaction(txin.prevout.hash, txVin, hashBlock, true))
+            throw runtime_error("txin could not be found");
+
+        if (hashBlock == 0)
+            throw runtime_error("txin is unconfirmed");
+
+        txin.scriptSig.clear();
+        CScript prevPubKey = txVin.vout[txin.prevout.n].scriptPubKey;
+
+        //sign what we can
+        SignSignature(keystore, prevPubKey, tx, nIn);
+
+        //merge in any previous signatures
+        txin.scriptSig = CombineSignatures(prevPubKey, tx, nIn, txin.scriptSig, oldVin[nIn].scriptSig);
+
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&tx, nIn))){
+            fComplete = false;
+        }
+        nIn++;
+    }
+}
 
 bool MultisigDialog::signMultisigTx(CMutableTransaction& tx, string& errorOut, QVBoxLayout* keyList)
 {
@@ -604,43 +642,19 @@ bool MultisigDialog::signMultisigTx(CMutableTransaction& tx, string& errorOut, Q
                 }
                 privKeystore.AddCScript(redeemScript);
             }
+            signMultisigTx(tx, privKeystore, oldVin, fComplete);
         }else{
             if (model->getEncryptionStatus() == model->Locked) {
-                if (!model->requestUnlock(true).isValid()) {
+                WalletModel::UnlockContext ctx(model->requestUnlock(true));
+                if (!ctx.isValid()) {
                     // Unlock wallet was cancelled
                     throw runtime_error("Error: Your wallet is locked. Please enter the wallet passphrase first.");
                 }
+                signMultisigTx(tx, *pwalletMain, oldVin, fComplete);
             }
-        }
-
-        //choose between local wallet and provided
-        const CKeyStore& keystore = fGivenKeys ? privKeystore : *pwalletMain;
-
-        //attempt to sign each input from local wallet
-        int nIn = 0;
-        for(CTxIn& txin : tx.vin){
-            //get inputs
-            CTransaction txVin;
-            uint256 hashBlock;
-            if (!GetTransaction(txin.prevout.hash, txVin, hashBlock, true))
-                throw runtime_error("txin could not be found");
-
-            if (hashBlock == 0)
-                throw runtime_error("txin is unconfirmed");
-
-            txin.scriptSig.clear();
-            CScript prevPubKey = txVin.vout[txin.prevout.n].scriptPubKey;
-
-            //sign what we can
-            SignSignature(keystore, prevPubKey, tx, nIn);
-
-            //merge in any previous signatures
-            txin.scriptSig = CombineSignatures(prevPubKey, tx, nIn, txin.scriptSig, oldVin[nIn].scriptSig);
-
-            if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&tx, nIn))){
-                fComplete = false;
+            else    {
+                signMultisigTx(tx, *pwalletMain, oldVin, fComplete);
             }
-            nIn++;
         }
 
         ui->signButtonStatus->setText(buildMultisigTxStatusString(fComplete, tx));

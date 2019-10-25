@@ -29,10 +29,10 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget* parent) : QDialog(pare
     ui->addressBookButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/address-book")));
     ui->pasteButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/editpaste")));
     ui->copySignatureButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/editcopy")));
-    ui->signMessageButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit")));
+    ui->signMessageButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/edit_white")));
     ui->clearButton_SM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
     ui->addressBookButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/address-book")));
-    ui->verifyMessageButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/transaction_0")));
+    ui->verifyMessageButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/transaction_0_white")));
     ui->clearButton_VM->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/remove")));
 
 #if QT_VERSION >= 0x040700

@@ -180,6 +180,7 @@ bool parseCommandLine(std::vector<std::string>& args, const std::string& strComm
 
 void RPCExecutor::request(const QString& command)
 {
+    // tableRPC.addDesktopWalletCommands();
     std::vector<std::string> args;
     if (!parseCommandLine(args, command.toStdString())) {
         emit reply(RPCConsole::CMD_ERROR, QString("Parse error: unbalanced ' or \""));
@@ -267,6 +268,8 @@ RPCConsole::RPCConsole(QWidget* parent) : QDialog(parent, Qt::WindowSystemMenuHi
     ui->peerHeading->setText(tr("Select a peer to view detailed information."));
 
     clear();
+
+    tableRPC.addDesktopWalletCommands();
 }
 
 RPCConsole::~RPCConsole()

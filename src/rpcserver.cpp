@@ -50,6 +50,8 @@ static boost::asio::io_service::work* rpc_dummy_work = NULL;
 static std::vector<CSubNet> rpc_allow_subnets; //!< List of subnets to allow RPC connections from
 static std::vector<boost::shared_ptr<ip::tcp::acceptor> > rpc_acceptors;
 
+//std::vector<std::string> desktopRPCCommands{"dumpprivkey", "dumpwallet", "move", "multisend", "sendfrom", "sendmany", "sendtoaddress", "sendtoaddressix"};
+
 void RPCTypeCheck(const UniValue& params,
                   const list<UniValue::VType>& typesExpected,
                   bool fAllowNull)
@@ -186,6 +188,15 @@ string CRPCTable::help(string strCommand) const
 #ifdef ENABLE_WALLET
         if (pcmd->reqWallet && !pwalletMain)
             continue;
+        /*if (std::find(desktopRPCCommands.begin(), desktopRPCCommands.end(), strMethod) != desktopRPCCommands.end())
+        {
+            LogPrintf("ThreadRPCServer: help for prohibited command %s\n", strMethod);
+            continue;
+        }
+        else
+        {
+            LogPrintf("ThreadRPCServer: help for NOT found prohibited command %s\n", strMethod);
+        }*/
 #endif
 
         try {
@@ -347,8 +358,10 @@ static const CRPCCommand vRPCCommands[] =
         {"wallet", "addmultisigaddress", &addmultisigaddress, true, false, true},
         {"wallet", "autocombinerewards", &autocombinerewards, false, false, true},
         {"wallet", "backupwallet", &backupwallet, true, false, true},
+#ifndef ENABLE_WEBWALLET
         {"wallet", "dumpprivkey", &dumpprivkey, true, false, true},
         {"wallet", "dumpwallet", &dumpwallet, true, false, true},
+#endif // ENABLE_WEBWALLET
         {"wallet", "bip38encrypt", &bip38encrypt, true, false, true},
         {"wallet", "bip38decrypt", &bip38decrypt, true, false, true},
         {"wallet", "encryptwallet", &encryptwallet, true, false, true},
@@ -379,12 +392,14 @@ static const CRPCCommand vRPCCommands[] =
         {"wallet", "listtransactions", &listtransactions, false, false, true},
         {"wallet", "listunspent", &listunspent, false, false, true},
         {"wallet", "lockunspent", &lockunspent, true, false, true},
+#ifndef ENABLE_WEBWALLET
         {"wallet", "move", &movecmd, false, false, true},
         {"wallet", "multisend", &multisend, false, false, true},
         {"wallet", "sendfrom", &sendfrom, false, false, true},
         {"wallet", "sendmany", &sendmany, false, false, true},
         {"wallet", "sendtoaddress", &sendtoaddress, false, false, true},
         {"wallet", "sendtoaddressix", &sendtoaddressix, false, false, true},
+#endif // ENABLE_WEBWALLET
         {"wallet", "setaccount", &setaccount, true, false, true},
         {"wallet", "setstakesplitthreshold", &setstakesplitthreshold, false, false, true},
         {"wallet", "settxfee", &settxfee, true, false, true},
@@ -1004,6 +1019,15 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
 #ifdef ENABLE_WALLET
     if (pcmd->reqWallet && !pwalletMain)
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    /*if (std::find(desktopRPCCommands.begin(), desktopRPCCommands.end(), strMethod) != desktopRPCCommands.end())
+    {
+        LogPrintf("ThreadRPCServer: found prohibited command %s\n", strMethod);
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    }
+    else
+    {
+        LogPrintf("ThreadRPCServer: NOT found prohibited command %s\n", strMethod);
+    }*/
 #endif
 
     // Observe safe mode
@@ -1052,6 +1076,12 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     } catch (std::exception& e) {
         throw JSONRPCError(RPC_MISC_ERROR, e.what());
     }
+}
+
+void CRPCTable::addDesktopWalletCommands() const
+{
+    LogPrintf("ThreadRPCServer: add desktop wallet commands\n");
+    //desktopRPCCommands.clear();
 }
 
 std::vector<std::string> CRPCTable::listCommands() const

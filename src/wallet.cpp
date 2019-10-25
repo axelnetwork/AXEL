@@ -116,6 +116,28 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey& pubkey)
     return true;
 }
 
+bool CWallet::ErasePrivKeyFromDB(const CPubKey& pubKey)
+{
+    // erase private key from DISK by respecting the configuration.
+    if (GetBoolArg("-storekey", DEFAULT_STORE_KEY))
+        return true;
+
+    {
+        AssertLockHeld(cs_wallet);
+        if (!IsCrypted()) {
+            return CWalletDB(strWalletFile).EraseKey(pubKey);
+        }
+    }
+
+    {
+        LOCK(cs_wallet);
+        if (pwalletdbEncryption)
+            return pwalletdbEncryption->EraseCryptedKey(pubKey);
+        else
+            return CWalletDB(strWalletFile).EraseCryptedKey(pubKey);
+    }
+}
+
 bool CWallet::AddCryptedKey(const CPubKey& vchPubKey,
     const vector<unsigned char>& vchCryptedSecret)
 {
@@ -2386,7 +2408,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
     //prevent staking a time that won't be accepted
     if (GetAdjustedTime() <= chainActive.Tip()->nTime)
-        MilliSleep(10000);
+        MilliSleep(1000);
 
     for(PAIRTYPE(const CWalletTx*, unsigned int) pcoin : setStakeCoins) {
         //make sure that enough time has elapsed between

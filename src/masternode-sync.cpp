@@ -193,7 +193,7 @@ void CMasternodeSync::ClearFulfilledRequest()
 void CMasternodeSync::Process()
 {
     static int tick = 0;
-
+	static int failRetryCount = 0;//counter for Sync failed times
     if (tick++ % MASTERNODE_SYNC_TIMEOUT != 0) return;
 
     if (IsSynced()) {
@@ -202,13 +202,21 @@ void CMasternodeSync::Process()
         */
         if (IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT) && !mnodeman.CountEnabled()) {
             Reset();
-        } else
+        } else {
+        	if(failRetryCount)
+				failRetryCount=0;
             return;
+        }
     }
 
     //try syncing again
     if (RequestedMasternodeAssets == MASTERNODE_SYNC_FAILED && lastFailure + (1 * 10) < GetTime()) {
         Reset();
+		if(failRetryCount % 10 == 0 )
+		{
+			LogPrintf("CMasternodeSync::Process - Sync failed reached 10 times,then clear Masternode vector! failRetryCount=%ld\n",failRetryCount);
+			mnodeman.Clear();
+		}
     } else if (RequestedMasternodeAssets == MASTERNODE_SYNC_FAILED) {
         return;
     }
@@ -231,6 +239,14 @@ void CMasternodeSync::Process()
 
     TRY_LOCK(cs_vNodes, lockRecv);
     if (!lockRecv) return;
+	
+	vector<CNode*> vValidNodes;//get valid nodes for mnsync and mnwsync
+	for(CNode* tempnode : vNodes)
+	{
+		if (tempnode->nVersion >= masternodePayments.GetMinMasternodePaymentsProto())
+			vValidNodes.push_back(tempnode);
+	}
+	int validsize=vValidNodes.size();
 
     for(CNode* pnode : vNodes) {
         if (Params().NetworkID() == CBaseChainParams::REGTEST) {
@@ -287,7 +303,7 @@ void CMasternodeSync::Process()
                     return;
                 }
 
-                if (pnode->HasFulfilledRequest("mnsync"))
+                if (pnode->HasFulfilledRequest("mnsync") && pnode!=vValidNodes.at(validsize-1) )
                     continue;
 
                 pnode->FulfilledRequest("mnsync");
@@ -298,11 +314,12 @@ void CMasternodeSync::Process()
                 if (lastMasternodeList == 0 &&
                     (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3 || GetTime() - nAssetSyncStarted > MASTERNODE_SYNC_TIMEOUT * 5)) {
                     if (IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT) && mnodeman.CountEnabled() > 6) {
-                        LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed, will retry later\n");
+						failRetryCount++;
+						LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed 1, will retry later,failRetryCount=%ld validsize=%ld\n",failRetryCount,validsize);
                         RequestedMasternodeAssets = MASTERNODE_SYNC_FAILED;
                         RequestedMasternodeAttempt = 0;
                         lastFailure = GetTime();
-                        nCountFailures++;
+                        nCountFailures++;						
                     } else {
                         GetNextAsset();
                     }
@@ -312,9 +329,9 @@ void CMasternodeSync::Process()
                 if (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3)
                     return;
 
-                if(!mnodeman.DsegUpdate(pnode))
-                    continue;
-
+                if(!mnodeman.DsegUpdate(pnode) && pnode!=vValidNodes.at(validsize-1) )
+                	continue;
+                
                 ++RequestedMasternodeAttempt;
 
                 return;
@@ -329,7 +346,7 @@ void CMasternodeSync::Process()
                     return;
                 }
 
-                if (pnode->HasFulfilledRequest("mnwsync"))
+                if (pnode->HasFulfilledRequest("mnwsync") && pnode!=vValidNodes.at(validsize-1) )
                     continue;
 
                 pnode->FulfilledRequest("mnwsync");
@@ -340,11 +357,12 @@ void CMasternodeSync::Process()
                 if (lastMasternodeWinner == 0 &&
                     (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3 || GetTime() - nAssetSyncStarted > MASTERNODE_SYNC_TIMEOUT * 5)) {
                     if (IsSporkActive(SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT) && mnodeman.CountEnabled() > 6) {
-                        LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed, will retry later\n");
+						failRetryCount++;
+						LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed 2, will retry later,failRetryCount=%ld validsize=%ld\n",failRetryCount,validsize);
                         RequestedMasternodeAssets = MASTERNODE_SYNC_FAILED;
                         RequestedMasternodeAttempt = 0;
                         lastFailure = GetTime();
-                        nCountFailures++;
+                        nCountFailures++;						
                     } else {
                         GetNextAsset();
                         // Try to activate our masternode if possible
@@ -359,9 +377,9 @@ void CMasternodeSync::Process()
                 if (!chainActive.Tip())
                     return;
 
-                if(!mnodeman.WinnersUpdate(pnode))
-                    continue;
-
+                if(!mnodeman.WinnersUpdate(pnode) && pnode!=vValidNodes.at(validsize-1) )
+                	continue;
+                
                 ++RequestedMasternodeAttempt;
 
                 return;

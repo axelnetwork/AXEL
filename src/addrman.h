@@ -191,12 +191,14 @@ private:
 
     //! list of "tried" buckets
     int vvTried[ADDRMAN_TRIED_BUCKET_COUNT][ADDRMAN_BUCKET_SIZE];
+    std::vector<int*> vvTriedVaild;
 
     //! number of (unique) "new" entries
     int nNew;
 
     //! list of "new" buckets
     int vvNew[ADDRMAN_NEW_BUCKET_COUNT][ADDRMAN_BUCKET_SIZE];
+    std::vector<int*> vvNewVaild;
 
 protected:
     //! Find an entry.
@@ -357,6 +359,11 @@ public:
                 int nUBucketPos = info.GetBucketPosition(nKey, true, nUBucket);
                 if (vvNew[nUBucket][nUBucketPos] == -1) {
                     vvNew[nUBucket][nUBucketPos] = n;
+
+                    vvNewVaild.push_back(&vvNew[nUBucket][nUBucketPos]);
+                    std::set<int *>s(vvNewVaild.begin(), vvNewVaild.end());
+                    vvNewVaild.assign(s.begin(), s.end());
+
                     info.nRefCount++;
                 }
             }
@@ -378,6 +385,9 @@ public:
                 mapAddr[info] = nIdCount;
                 vvTried[nKBucket][nKBucketPos] = nIdCount;
                 nIdCount++;
+                vvTriedVaild.push_back(&vvTried[nKBucket][nKBucketPos]);
+                std::set<int *>st(vvTriedVaild.begin(), vvTriedVaild.end());
+                vvTriedVaild.assign(st.begin(), st.end());
             } else {
                 nLost++;
             }
@@ -397,6 +407,9 @@ public:
                     if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
                         info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
+                        vvNewVaild.push_back(&vvNew[bucket][nUBucketPos]);
+                        std::set<int *>s(vvNewVaild.begin(), vvNewVaild.end());
+                        vvNewVaild.assign(s.begin(), s.end());
                     }
                 }
             }
@@ -434,12 +447,13 @@ public:
                 vvNew[bucket][entry] = -1;
             }
         }
+        vvNewVaild.clear();
         for (size_t bucket = 0; bucket < ADDRMAN_TRIED_BUCKET_COUNT; bucket++) {
             for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++) {
                 vvTried[bucket][entry] = -1;
             }
         }
-
+        vvTriedVaild.clear();
         nIdCount = 0;
         nTried = 0;
         nNew = 0;

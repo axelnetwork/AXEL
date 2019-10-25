@@ -192,7 +192,7 @@
            </property>
            <property name="icon">
             <iconset resource="../axel.qrc">
-             <normaloff>:/icons/filesave</normaloff>:/icons/filesave</iconset>
+             <normaloff>:/icons/filesave_white</normaloff>:/icons/filesave_white</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -266,7 +266,7 @@ Please be patient after clicking import.</string>
            </property>
            <property name="icon">
             <iconset resource="../axel.qrc">
-             <normaloff>:/icons/receiving_addresses</normaloff>:/icons/receiving_addresses</iconset>
+             <normaloff>:/icons/receiving_addresses_white</normaloff>:/icons/receiving_addresses_white</iconset>
            </property>
           </widget>
          </item>
@@ -642,7 +642,7 @@ p, li { white-space: pre-wrap; }
                </property>
                <property name="icon">
                 <iconset resource="../axel.qrc">
-                 <normaloff>:/icons/edit</normaloff>:/icons/edit</iconset>
+                 <normaloff>:/icons/edit_white</normaloff>:/icons/edit_white</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>

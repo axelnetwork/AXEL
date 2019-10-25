@@ -58,12 +58,15 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
         (6200, uint256("6322c4aa3410134ed6d513056b94d6105123deb1051ae293804689f8887f0099"))
         (7623, uint256("7b1978dd0320e66002fda5817f32374d8459a6b235073132f47dc1351de9403b"))
         (14115, uint256("62748f8e96122824366828159e8246c88e810f4260314568abdb0c9ead3f9c1f"))
+        (94845, uint256("503eb095657c7c7c79807813f57e3d5295d2013a129bd6bdb76771f98a6d5a0b"))
+        (102123, uint256("9aac6fc1824ef4fe540f2dfe21e4762ad495cb7f055a66ca5129ec508edc9532"))
+        (142175, uint256("6c036dc68197de682da1d27734f18429f4419cb670b11321b1e676acddd342fb"))
     ;
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1563835187,
-    29301,
+    1571675975,
+    304603,
     2000
     // 1549526525, // * UNIX timestamp of last checkpoint block
     // 0,          // * total number of transactions between genesis and last checkpoint
@@ -136,17 +139,6 @@ public:
         assert(genesis.hashMerkleRoot == uint256("67d2e8a156a26373a9b96b406d5cef6b03e39071f05b0786fd376785f096ada7"));
         assert(hashGenesisBlock == uint256("000003d2dd01c2fa11ffbaf07a20ce4f966a76ce2a209412a60ecba138d99b5e"));
 
-        // vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("", "149.28.209.176"));    // axel-mn1-001
-        vSeeds.push_back(CDNSSeedData("", "107.191.42.4"));      // axel-mn2-001
-        vSeeds.push_back(CDNSSeedData("", "155.138.244.129"));   // axel-mn3-001
-        vSeeds.push_back(CDNSSeedData("", "199.247.13.192"));    // axel-mn1-004
-        vSeeds.push_back(CDNSSeedData("", "217.163.29.116"));    // axel-mn2-004
-        vSeeds.push_back(CDNSSeedData("", "209.250.229.177"));   // axel-mn3-004
-        vSeeds.push_back(CDNSSeedData("", "149.248.61.27"));     // axel-mn3-002
-        vSeeds.push_back(CDNSSeedData("", "139.180.218.99"));    // axel-mn3-003
-        vSeeds.push_back(CDNSSeedData("", "95.179.238.23"));     // axel-mn3-005
-        vSeeds.push_back(CDNSSeedData("", "139.180.223.77"));    // axel-mn3-006
         vSeeds.push_back(CDNSSeedData("", "45.76.62.42"));       // amn1001.axel.network
         vSeeds.push_back(CDNSSeedData("", "104.207.151.24"));    // amn1002.axel.network
         vSeeds.push_back(CDNSSeedData("", "78.141.206.123"));    // amn1003.axel.network
@@ -155,6 +147,8 @@ public:
         vSeeds.push_back(CDNSSeedData("", "167.179.76.55"));     // amn1006.axel.network
         vSeeds.push_back(CDNSSeedData("", "66.42.55.200"));      // amn1007.axel.network
         vSeeds.push_back(CDNSSeedData("", "155.138.132.181"));   // amn1008.axel.network
+        vSeeds.push_back(CDNSSeedData("", "45.63.38.177"));      // amn1009.axel.network
+        vSeeds.push_back(CDNSSeedData("", "95.179.180.214"));    // amn1010.axel.network
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 23); // A
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 75); // X
@@ -170,10 +164,10 @@ public:
 
         fRequireRPCPassword = true;
         fMiningRequiresPeers = true;
-        fDefaultConsistencyChecks = true;
+        fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
-        fSkipProofOfWorkCheck = false;
+        fSkipProofOfWorkCheck = true;
         fTestnetToBeDeprecatedFieldRPC = false;
         fHeadersFirstSyncingActive = false;
 

@@ -149,7 +149,8 @@
     }
 
     QTabBar::tab:!selected {
-        background: transparent;
+        /*background: transparent;*/
+		background: white;
     }
 
     QTabBar::tab:!selected:hover {
@@ -2014,13 +2015,37 @@
         background-color:#FFFFFF;
     }
 
+	QDialog#MultisigDialog QWidget#addAddressWidget  {
+        background-color: #FFFFFF;
+		border:1px solid;
+        border-color: #d2d2d2;
+    }
+
+	QDialog#MultisigDialog QWidget#txInputsWidget  {
+        background-color: #FFFFFF;
+		border:1px solid;
+        border-color: #d2d2d2;
+    }
+
+	QDialog#MultisigDialog QWidget#destinationsScrollAreaContents  {
+        background-color: #FFFFFF;
+		border:1px solid;
+        border-color: #d2d2d2;
+    }
+
+	QDialog#MultisigDialog QWidget#keyScrollAreaContents  {
+        background-color: #FFFFFF;
+		border:1px solid;
+        border-color: #d2d2d2;
+    }	
+
     QDialog#MultisigDialog QFrame#addressFrame {
         background-color:#FFFFFF;
     }
 
     QDialog#MultisigDialog QTextEdit {
         background-color:#FFFFFF;
-
+		color: #000000;
     }
 
     /*QDialog#MultisigDialog QPushButton# {

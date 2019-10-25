@@ -1840,11 +1840,31 @@
         background-color: #000000;
     }
 
-    QDialog#MultisigDialog QFrame#addressFrame {
+	QDialog#MultisigDialog QWidget#addAddressWidget  {
         background-color: #000000;
+		border:1px solid;
+		border-color: #d2d2d2;
     }
 
-    QDialog#MultisigDialog QTextEdit {
+	QDialog#MultisigDialog QWidget#txInputsWidget  {
+        background-color: #000000;
+		border:1px solid;
+		border-color: #d2d2d2;
+    }
+
+	QDialog#MultisigDialog QWidget#destinationsScrollAreaContents  {
+        background-color: #000000;
+		border:1px solid;
+		border-color: #d2d2d2;
+    }
+
+	QDialog#MultisigDialog QWidget#keyScrollAreaContents  {
+        background-color: #000000;
+		border:1px solid;
+		border-color: #d2d2d2;
+    }	
+
+    QDialog#MultisigDialog QFrame#addressFrame {
         background-color: #000000;
     }
 
@@ -1854,7 +1874,7 @@
     }
 
     QDialog#MultisigDialog QPushButton {
-        background-color: #6C0EBF;
+        background-color: #9013FE;
         color: #FFFFFF;
         font-size: 12px;
     }
@@ -1974,6 +1994,8 @@
     QDialog#MultisigDialog QTextEdit {
         background-color: #000000;
         color: #ffffff;
+		border: 1px solid;
+		border-color:#d7d7d7;		
     }
 
     QDialog#MultisigDialog QLabel#message {

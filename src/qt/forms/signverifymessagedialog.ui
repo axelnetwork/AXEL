@@ -159,7 +159,7 @@
            </property>
            <property name="icon">
             <iconset resource="../axel.qrc">
-             <normaloff>:/icons/edit</normaloff>:/icons/edit</iconset>
+             <normaloff>:/icons/edit_white</normaloff>:/icons/edit_white</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -302,7 +302,7 @@
            </property>
            <property name="icon">
             <iconset resource="../axel.qrc">
-             <normaloff>:/icons/transaction_0</normaloff>:/icons/transaction_0</iconset>
+             <normaloff>:/icons/transaction_0_white</normaloff>:/icons/transaction_0_white</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>

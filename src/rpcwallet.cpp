@@ -168,6 +168,7 @@ UniValue getaccountaddress(const UniValue& params, bool fHelp)
     return ret;
 }
 
+
 UniValue getaccountkeypair(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -188,15 +189,22 @@ UniValue getaccountkeypair(const UniValue& params, bool fHelp)
     // Parse the account first so we don't generate a key if there's an error
     string strAccount = AccountFromValue(params[0]);
 
+    CWalletDB walletdb(pwalletMain->strWalletFile);
+    CAccount account;
+    walletdb.ReadAccount(strAccount, account);
+    bool writeTodb = false;
+
     pwalletMain->TopUpKeyPool();
 
+    writeTodb = !account.vchPubKey.IsValid();
     // Generate a new key that is added to wallet
-    CPubKey newKey;
-    if (!pwalletMain->GetKeyFromPool(newKey))
+    if (!pwalletMain->GetKeyFromPool(account.vchPubKey))
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    CKeyID keyID = newKey.GetID();
+    CKeyID keyID = account.vchPubKey.GetID();
 
     pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+    if (writeTodb) walletdb.WriteAccount(strAccount, account);
+
     string strAddress = CBitcoinAddress(keyID).ToString();
     CKey vchSecret;
     if (!pwalletMain->GetKey(keyID, vchSecret))
@@ -206,8 +214,12 @@ UniValue getaccountkeypair(const UniValue& params, bool fHelp)
     obj.push_back(Pair("addr", strAddress));
     obj.push_back(Pair("priv", CBitcoinSecret(vchSecret).ToString()));
 
+    // keep private key in RAM without keeping in disk.
+    pwalletMain->ErasePrivKeyFromDB(account.vchPubKey);
+
     return obj;
 }
+
 
 UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 {

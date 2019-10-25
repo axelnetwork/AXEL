@@ -48,6 +48,7 @@ private:
     QString buildMultisigTxStatusString(bool fComplete, const CMutableTransaction& tx);
     bool createRedeemScript(int m, std::vector<std::string> keys, CScript& redeemRet, std::string& errorRet);
     bool createMultisigTransaction(std::vector<CTxIn> vUserIn, std::vector<CTxOut> vUserOut, string& feeStringRet, string& errorRet);
+    void signMultisigTx(CMutableTransaction& tx, const CKeyStore& keystore, vector<CTxIn> &oldVin, bool &fComplete);
     bool signMultisigTx(CMutableTransaction& txToSign, std::string& errorMessageRet, QVBoxLayout* keyList = nullptr);
     bool addMultisig(int m, std::vector<std::string> keys);
     bool isFullyVerified(CMutableTransaction& txToVerify);

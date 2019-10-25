@@ -2,8 +2,8 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 1)
-define(_CLIENT_VERSION_REVISION, 3)
-define(_CLIENT_VERSION_BUILD, 1)
+define(_CLIENT_VERSION_REVISION, 5)
+define(_CLIENT_VERSION_BUILD, 2)
 define(_CLIENT_VERSION_IS_RELEASE, true)
 define(_COPYRIGHT_YEAR, 2019)
 AC_INIT([AXEL Core],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_REVISION],[http://axel.org/],[axel])
@@ -100,6 +100,16 @@ AC_ARG_ENABLE([wallet],
   [enable wallet (default is yes)])],
   [enable_wallet=$enableval],
   [enable_wallet=yes])
+
+# Enable web wallet
+AC_ARG_ENABLE([webwallet],
+  [AS_HELP_STRING([--enable-webwallet],
+  [enable webwallet (default is no)])],
+  [enable_webwallet=$enableval],
+  [enable_webwallet=no])
+
+
+
 
 AC_ARG_WITH([miniupnpc],
   [AS_HELP_STRING([--with-miniupnpc],
@@ -906,6 +916,18 @@ else
   AC_MSG_RESULT(no)
 fi
 
+
+dnl enable wallet
+AC_MSG_CHECKING([if webwallet should be enabled])
+if test x$enable_webwallet != xno; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE_UNQUOTED([ENABLE_WEBWALLET],[1],[Define to 1 to enable webwallet functions])
+
+else
+  AC_MSG_RESULT(no)
+fi
+
+
 dnl enable upnp support
 AC_MSG_CHECKING([whether to build with support for UPnP])
 if test x$have_miniupnpc = xno; then
@@ -998,6 +1020,7 @@ AM_CONDITIONAL([TARGET_DARWIN], [test x$TARGET_OS = xdarwin])
 AM_CONDITIONAL([BUILD_DARWIN], [test x$BUILD_OS = xdarwin])
 AM_CONDITIONAL([TARGET_WINDOWS], [test x$TARGET_OS = xwindows])
 AM_CONDITIONAL([ENABLE_WALLET],[test x$enable_wallet = xyes])
+AM_CONDITIONAL([ENABLE_WEBWALLET],[test x$enable_webwallet = xyes])
 AM_CONDITIONAL([ENABLE_TESTS],[test x$use_tests = xyes])
 AM_CONDITIONAL([ENABLE_QT],[test x$bitcoin_enable_qt = xyes])
 AM_CONDITIONAL([HAVE_QT5], [test x$bitcoin_qt_got_major_vers = x5])
@@ -1096,6 +1119,7 @@ esac
 echo
 echo "Options used to compile and link:"
 echo "  with wallet   = $enable_wallet"
+echo "  with webwallet= $enable_webwallet"
 echo "  with gui / qt = $bitcoin_enable_qt"
 if test x$bitcoin_enable_qt != xno; then
     echo "    qt version  = $bitcoin_qt_got_major_vers"

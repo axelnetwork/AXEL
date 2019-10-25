@@ -139,6 +139,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
         }
+
+        // keep private key in RAM without keeping in disk.
+        pwalletMain->ErasePrivKeyFromDB(pubkey);
     }
 
     return NullUniValue;

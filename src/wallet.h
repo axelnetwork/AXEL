@@ -324,6 +324,8 @@ public:
     bool LoadKey(const CKey& key, const CPubKey& pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)
     bool LoadKeyMetadata(const CPubKey& pubkey, const CKeyMetadata& metadata);
+    //! Erase private key from wallet DB.
+    bool ErasePrivKeyFromDB(const CPubKey& pubKey);
 
     bool LoadMinVersion(int nVersion)
     {

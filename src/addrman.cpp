@@ -144,6 +144,8 @@ void CAddrMan::ClearNew(int nUBucket, int nUBucketPos)
         if (infoDelete.nRefCount == 0) {
             Delete(nIdDelete);
         }
+        std::vector<int *>::iterator iter = find(vvNewVaild.begin(), vvNewVaild.end(), &vvNew[nUBucket][nUBucketPos]);
+        if(iter !=  vvNewVaild.end()) vvNewVaild.erase(iter);
     }
 }
 
@@ -155,6 +157,9 @@ void CAddrMan::MakeTried(CAddrInfo& info, int nId)
         if (vvNew[bucket][pos] == nId) {
             vvNew[bucket][pos] = -1;
             info.nRefCount--;
+
+            std::vector<int *>::iterator iter = find(vvNewVaild.begin(), vvNewVaild.end(), &vvNew[bucket][pos]);
+            if(iter !=  vvNewVaild.end()) vvNewVaild.erase(iter);
         }
     }
     nNew--;
@@ -176,6 +181,8 @@ void CAddrMan::MakeTried(CAddrInfo& info, int nId)
         infoOld.fInTried = false;
         vvTried[nKBucket][nKBucketPos] = -1;
         nTried--;
+        vector<int *>::iterator iter = find(vvTriedVaild.begin(), vvTriedVaild.end(), &vvTried[nKBucket][nKBucketPos]);
+        if(iter !=  vvTriedVaild.end()) vvTriedVaild.erase(iter);
 
         // find which new bucket it belongs to
         int nUBucket = infoOld.GetNewBucket(nKey);
@@ -187,12 +194,19 @@ void CAddrMan::MakeTried(CAddrInfo& info, int nId)
         infoOld.nRefCount = 1;
         vvNew[nUBucket][nUBucketPos] = nIdEvict;
         nNew++;
+
+        vvNewVaild.push_back(&vvNew[nUBucket][nUBucketPos]);
+        std::set<int *>sn(vvNewVaild.begin(), vvNewVaild.end());
+        vvNewVaild.assign(sn.begin(), sn.end());
     }
     assert(vvTried[nKBucket][nKBucketPos] == -1);
 
     vvTried[nKBucket][nKBucketPos] = nId;
     nTried++;
     info.fInTried = true;
+    vvTriedVaild.push_back(&vvTried[nKBucket][nKBucketPos]);
+    std::set<int *>st(vvTriedVaild.begin(), vvTriedVaild.end());
+    vvTriedVaild.assign(st.begin(), st.end());
 }
 
 void CAddrMan::Good_(const CService& addr, int64_t nTime)
@@ -290,8 +304,13 @@ bool CAddrMan::Add_(const CAddress& addr, const CNetAddr& source, int64_t nTimeP
 
     int nUBucket = pinfo->GetNewBucket(nKey, source);
     int nUBucketPos = pinfo->GetBucketPosition(nKey, true, nUBucket);
+    vector<int *>::iterator iter;
     if (vvNew[nUBucket][nUBucketPos] != nId) {
         bool fInsert = vvNew[nUBucket][nUBucketPos] == -1;
+
+        iter = find(vvNewVaild.begin(), vvNewVaild.end(), &vvNew[nUBucket][nUBucketPos]);
+        if(iter !=  vvNewVaild.end()) vvNewVaild.erase(iter);
+
         if (!fInsert) {
             CAddrInfo& infoExisting = mapInfo[vvNew[nUBucket][nUBucketPos]];
             if (infoExisting.IsTerrible() || (infoExisting.nRefCount > 1 && pinfo->nRefCount == 0)) {
@@ -303,6 +322,11 @@ bool CAddrMan::Add_(const CAddress& addr, const CNetAddr& source, int64_t nTimeP
             ClearNew(nUBucket, nUBucketPos);
             pinfo->nRefCount++;
             vvNew[nUBucket][nUBucketPos] = nId;
+
+            vvNewVaild.push_back(&vvNew[nUBucket][nUBucketPos]);
+            std::set<int *>s(vvNewVaild.begin(),vvNewVaild.end());
+            vvNewVaild.assign(s.begin(), s.end());
+
         } else {
             if (pinfo->nRefCount == 0) {
                 Delete(nId);
@@ -341,11 +365,9 @@ CAddress CAddrMan::Select_()
         // use a tried node
         double fChanceFactor = 1.0;
         while (1) {
-            int nKBucket = GetRandInt(ADDRMAN_TRIED_BUCKET_COUNT);
-            int nKBucketPos = GetRandInt(ADDRMAN_BUCKET_SIZE);
-            if (vvTried[nKBucket][nKBucketPos] == -1)
-                continue;
-            int nId = vvTried[nKBucket][nKBucketPos];
+            vector<int*>::iterator iter = vvTriedVaild.begin();
+            int nId = *iter[ GetRandInt(vvTriedVaild.size())];
+
             assert(mapInfo.count(nId) == 1);
             CAddrInfo& info = mapInfo[nId];
             if (GetRandInt(1 << 30) < fChanceFactor * info.GetChance() * (1 << 30))
@@ -356,11 +378,9 @@ CAddress CAddrMan::Select_()
         // use a new node
         double fChanceFactor = 1.0;
         while (1) {
-            int nUBucket = GetRandInt(ADDRMAN_NEW_BUCKET_COUNT);
-            int nUBucketPos = GetRandInt(ADDRMAN_BUCKET_SIZE);
-            if (vvNew[nUBucket][nUBucketPos] == -1)
-                continue;
-            int nId = vvNew[nUBucket][nUBucketPos];
+            vector<int*>::iterator iter = vvNewVaild.begin();
+            int nId = *iter[GetRandInt(vvNewVaild.size())];
+
             assert(mapInfo.count(nId) == 1);
             CAddrInfo& info = mapInfo[nId];
             if (GetRandInt(1 << 30) < fChanceFactor * info.GetChance() * (1 << 30))

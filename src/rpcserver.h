@@ -123,6 +123,8 @@ public:
     * @returns List of registered commands.
     */
     std::vector<std::string> listCommands() const;
+
+    void addDesktopWalletCommands() const;
 };
 
 extern const CRPCTable tableRPC;

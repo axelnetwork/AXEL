@@ -74,7 +74,7 @@ bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, c
     nWalletDBUpdated++;
 
     if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
-            keyMeta, false))
+            keyMeta))
         return false;
 
     // hash pubkey/privkey to accelerate wallet load
@@ -83,7 +83,13 @@ bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, c
     vchKey.insert(vchKey.end(), vchPubKey.begin(), vchPubKey.end());
     vchKey.insert(vchKey.end(), vchPrivKey.begin(), vchPrivKey.end());
 
-    return Write(std::make_pair(std::string("key"), vchPubKey), std::make_pair(vchPrivKey, Hash(vchKey.begin(), vchKey.end())), false);
+    return Write(std::make_pair(std::string("key"), vchPubKey), std::make_pair(vchPrivKey, Hash(vchKey.begin(), vchKey.end())));
+}
+
+bool CWalletDB::EraseKey(const CPubKey& vchPubKey)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("key"), vchPubKey));
 }
 
 bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
@@ -97,13 +103,19 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
             keyMeta))
         return false;
 
-    if (!Write(std::make_pair(std::string("ckey"), vchPubKey), vchCryptedSecret, false))
+    if (!Write(std::make_pair(std::string("ckey"), vchPubKey), vchCryptedSecret))
         return false;
     if (fEraseUnencryptedKey) {
         Erase(std::make_pair(std::string("key"), vchPubKey));
         Erase(std::make_pair(std::string("wkey"), vchPubKey));
     }
     return true;
+}
+
+bool CWalletDB::EraseCryptedKey(const CPubKey& vchPubKey)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("ckey"), vchPubKey));
 }
 
 bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
