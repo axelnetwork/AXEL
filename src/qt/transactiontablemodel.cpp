@@ -31,7 +31,11 @@ static int column_alignments[] = {
     Qt::AlignLeft | Qt::AlignVCenter, /* date */
     Qt::AlignLeft | Qt::AlignVCenter, /* type */
     Qt::AlignLeft | Qt::AlignVCenter, /* address */
-    Qt::AlignRight | Qt::AlignVCenter /* amount */
+#ifdef Q_OS_MAC    
+    Qt::AlignLeft | Qt::AlignVCenter /* amount */
+#else
+	Qt::AlignRight | Qt::AlignVCenter /* amount */
+#endif
 };
 
 // Comparison operator for sort/binary search of model tx list

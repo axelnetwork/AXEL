@@ -56,7 +56,7 @@ const QString UPGRADEWALLET("-upgradewallet");
 const QString REINDEX("-reindex");
 const QString RESYNC("-resync");
 
-const struct {
+/*const struct {
     const char* url;
     const QString& source;
 } ICON_MAPPING[] = {
@@ -64,7 +64,7 @@ const struct {
     {"cmd-reply", GUIUtil::getThemeImage(":/icons/tx_output")},
     {"cmd-error", GUIUtil::getThemeImage(":/icons/tx_output")},
     {"misc", GUIUtil::getThemeImage(":/icons/tx_inout")},
-    {NULL, NULL}};
+    {NULL, NULL}};*/
 
 /* Object for executing console RPC commands in a separate thread.
 */
@@ -484,6 +484,17 @@ void ToolsPage::buildParameterlist(QString arg)
 
 void ToolsPage::clear()
 {
+	//adjust ICON_MAPPING here
+	static const struct {
+    const char* url;
+    const QString& source;
+} ICON_MAPPING[] = {
+    {"cmd-request", GUIUtil::getThemeImage(":/icons/tx_input")},
+    {"cmd-reply", GUIUtil::getThemeImage(":/icons/tx_output")},
+    {"cmd-error", GUIUtil::getThemeImage(":/icons/tx_output")},
+    {"misc", GUIUtil::getThemeImage(":/icons/tx_inout")},
+    {NULL, NULL}};
+
     ui->messagesWidget->clear();
     history.clear();
     historyPtr = 0;

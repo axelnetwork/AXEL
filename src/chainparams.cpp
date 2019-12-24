@@ -61,12 +61,15 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
         (94845, uint256("503eb095657c7c7c79807813f57e3d5295d2013a129bd6bdb76771f98a6d5a0b"))
         (102123, uint256("9aac6fc1824ef4fe540f2dfe21e4762ad495cb7f055a66ca5129ec508edc9532"))
         (142175, uint256("6c036dc68197de682da1d27734f18429f4419cb670b11321b1e676acddd342fb"))
+        (191840, uint256("e3ca48e9741267dce0746e9dad6fc1734759be7c10e1dae1ceab83d9816ff721"))
+        (205848, uint256("40baf64bd078b66977ea2a3697817585ee23253d1debdabeadeb49d2d0d1e57d"))
+        (225895, uint256("03c4ad8c228d5de7db80aac733383560bb2f7481b3ad4b159d28d6b5f64b41e7"))
     ;
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1571675975,
-    304603,
+    1576744320,
+    509240,
     2000
     // 1549526525, // * UNIX timestamp of last checkpoint block
     // 0,          // * total number of transactions between genesis and last checkpoint
@@ -210,7 +213,7 @@ public:
         nToCheckBlockUpgradeMajority = 100;
         nMinerThreads = 0;
         nTargetSpacing = 1 * 60;  // 1 minute
-        nLastPOWBlock = std::numeric_limits<decltype(nLastPOWBlock)>::max();
+        nLastPOWBlock = 500;
         nMaturity = 15;
         nMasternodeCountDrift = 4;
         nModifierUpdateBlock = std::numeric_limits<decltype(nModifierUpdateBlock)>::max();

@@ -15,9 +15,9 @@
 
 //! These need to be macros, as clientversion.cpp's and axel*-res.rc's voodoo requires it
 #define CLIENT_VERSION_MAJOR 1
-#define CLIENT_VERSION_MINOR 1
-#define CLIENT_VERSION_REVISION 5
-#define CLIENT_VERSION_BUILD 2
+#define CLIENT_VERSION_MINOR 2
+#define CLIENT_VERSION_REVISION 3
+#define CLIENT_VERSION_BUILD 0
 
 //! Set to true for release, false for prerelease or test build
 #define CLIENT_VERSION_IS_RELEASE true
@@ -38,7 +38,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers, 2014-" STRINGIZE(COPYRIGHT_YEAR) " The Dash Core Developers, 2015-" STRINGIZE(COPYRIGHT_YEAR) " The XDNA Core Developers, 2018-" STRINGIZE(COPYRIGHT_YEAR) " The PIVX Core Developers, 2017-" STRINGIZE(COPYRIGHT_YEAR) " The AXEL Core Developers"
+#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers, 2014-" STRINGIZE(COPYRIGHT_YEAR) " The Dash Core Developers, 2015-" STRINGIZE(COPYRIGHT_YEAR) " The PIVX Core Developers, 2017-" STRINGIZE(COPYRIGHT_YEAR) " The Bulwark developers, 2018-" STRINGIZE(COPYRIGHT_YEAR) " The esbcoin Core developers, 2019-" STRINGIZE(COPYRIGHT_YEAR) " The AXEL Core Developers"
 
 /**
  * axeld-res.rc includes this file, but it cannot cope with real c++ code.

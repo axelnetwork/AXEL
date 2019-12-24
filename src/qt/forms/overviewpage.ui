@@ -31,6 +31,9 @@
    </property>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_main">
+     <property name="spacing">
+      <number>3</number>
+     </property>
      <property name="sizeConstraint">
       <enum>QLayout::SetDefaultConstraint</enum>
      </property>
@@ -54,7 +57,7 @@
        <property name="minimumSize">
         <size>
          <width>960</width>
-         <height>220</height>
+         <height>180</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -82,12 +85,18 @@
         <enum>QFrame::Raised</enum>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
+        <property name="topMargin">
+         <number>3</number>
+        </property>
+        <property name="bottomMargin">
+         <number>3</number>
+        </property>
         <item>
          <widget class="QFrame" name="frame_blue_1">
           <property name="minimumSize">
            <size>
             <width>345</width>
-            <height>200</height>
+            <height>180</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -103,6 +112,12 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <property name="topMargin">
+            <number>1</number>
+           </property>
+           <property name="bottomMargin">
+            <number>1</number>
+           </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
@@ -196,7 +211,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>100</height>
+                 <height>80</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -270,7 +285,7 @@
           <property name="minimumSize">
            <size>
             <width>220</width>
-            <height>200</height>
+            <height>180</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -286,6 +301,12 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
+           <property name="topMargin">
+            <number>1</number>
+           </property>
+           <property name="bottomMargin">
+            <number>1</number>
+           </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
@@ -413,7 +434,7 @@
           <property name="minimumSize">
            <size>
             <width>345</width>
-            <height>200</height>
+            <height>180</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -429,18 +450,36 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_5">
+           <property name="topMargin">
+            <number>1</number>
+           </property>
+           <property name="bottomMargin">
+            <number>1</number>
+           </property>
            <item>
             <widget class="QFrame" name="frame_logo_horizontal">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
                <width>345</width>
-               <height>140</height>
+               <height>120</height>
               </size>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QFrame" name="button_logo_horizontal">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
                <width>345</width>
@@ -623,8 +662,11 @@
         <enum>QFrame::Raised</enum>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <property name="topMargin">
+         <number>3</number>
+        </property>
         <property name="bottomMargin">
-         <number>4</number>
+         <number>3</number>
         </property>
         <item>
          <widget class="QFrame" name="frame_bottom_1">
@@ -641,8 +683,11 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_9">
+           <property name="topMargin">
+            <number>1</number>
+           </property>
            <property name="bottomMargin">
-            <number>9</number>
+            <number>1</number>
            </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1422,6 +1467,12 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_10">
+           <property name="topMargin">
+            <number>1</number>
+           </property>
+           <property name="bottomMargin">
+            <number>1</number>
+           </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_8">
              <property name="spacing">

@@ -411,25 +411,32 @@ void SendCoinsDialog::send(QList<SendCoinsRecipient> recipients, QString strFee,
 
     // Limit number of displayed entries
     int messageEntries = formatted.size();
-    int displayedEntries = 0;
-    for (int i = 0; i < formatted.size(); i++) {
-        if (i >= MAX_SEND_POPUP_ENTRIES) {
-            formatted.removeLast();
-            i--;
-        } else {
-            displayedEntries = i + 1;
-        }
-    }
     questionString.append("<hr />");
-    questionString.append(tr("<b>(%1 of %2 entries displayed)</b>").arg(displayedEntries).arg(messageEntries));
+    questionString.append(tr("<b>(%1 entries displayed)</b>").arg(messageEntries));
 
     // Display message box
-    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
-        questionString.arg(formatted.join("<br />")),
-        QMessageBox::Yes | QMessageBox::Cancel,
-        QMessageBox::Cancel);
+    QMessageBox msgBox(QMessageBox::Question, tr("Confirm send coins"), "", QMessageBox::Yes | QMessageBox::Cancel, this);
 
-    if (retval != QMessageBox::Yes) {
+    QLabel *label = new QLabel(this);
+    label->setTextInteractionFlags(Qt::TextInteractionFlags(msgBox.style()->styleHint(QStyle::SH_MessageBox_TextInteractionFlags, 0, &msgBox)));
+    label->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    label->setMargin(24);
+    label->setStyleSheet("QLabel { background-color : transparent; }");
+    label->setWordWrap(true);
+    label->setText(questionString.arg(formatted.join("<br />")));
+
+    QScrollArea *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setWidget(label);
+    scrollArea->setMinimumSize(420, 240);
+    scrollArea->setMaximumHeight(360);
+
+    auto gridLayout = dynamic_cast<QGridLayout*>(msgBox.layout());
+    gridLayout->addWidget(scrollArea, 0, 2, 1, 1);
+
+    if (msgBox.exec() != QMessageBox::Yes) {
         fNewRecipientAllowed = true;
         return;
     }

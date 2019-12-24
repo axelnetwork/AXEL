@@ -37,10 +37,12 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) 
     // define text to place
     QString titleText = tr("AXEL Utility Token Core");
     QString versionText = QString(tr("Version %1")).arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightTextBtc = QChar(0xA9) + QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Bitcoin Core developers"));
-    QString copyrightTextDash = QChar(0xA9) + QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Dash Core developers"));
-    QString copyrightTextPIVX = QChar(0xA9) + QString(" 2015-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The PIVX Core developers"));
-    QString copyrightTextaxel = QChar(0xA9) + QString(" 2018-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The AXEL Core developers"));
+    QString copyrightTextBtc = QChar(0xA9) + QString(" 2009-%1 ").arg(2014) + QString(tr("The Bitcoin Core developers"));
+    QString copyrightTextDash = QChar(0xA9) + QString(" 2014-%1 ").arg(2015) + QString(tr("The Dash Core developers"));
+    QString copyrightTextPIVX = QChar(0xA9) + QString(" 2015-%1 ").arg(2017) + QString(tr("The PIVX Core developers"));
+	QString copyrightTextBulwark = QChar(0xA9) + QString(" 2017-%1 ").arg(2018) + QString(tr("The Bulwark developers"));
+	QString copyrightTextesbc = QChar(0xA9) + QString(" 2018-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The esbcoin Core developers"));
+    QString copyrightTextaxel = QChar(0xA9) + QString(" %1-  ").arg(COPYRIGHT_YEAR) + QString(tr("The AXEL Core developers"));
     QString titleAddText = networkStyle->getTitleAddText();
 
     QString font = QApplication::font().toString();
@@ -71,10 +73,12 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) 
     // draw copyright stuff
     pixPaint.setPen(QColor(160, 160, 160));
     pixPaint.setFont(QFont(font, 12 * fontFactor));
-    pixPaint.drawText(paddingLeft+133, paddingTop + titleCopyrightVSpace, copyrightTextBtc);
-    pixPaint.drawText(paddingLeft+139, paddingTop + titleCopyrightVSpace + 14, copyrightTextDash);
-    pixPaint.drawText(paddingLeft+140, paddingTop + titleCopyrightVSpace + 28, copyrightTextPIVX);
-    pixPaint.drawText(paddingLeft+140, paddingTop + titleCopyrightVSpace + 42, copyrightTextaxel);
+    pixPaint.drawText(paddingLeft+141, paddingTop + titleCopyrightVSpace, copyrightTextBtc);
+    pixPaint.drawText(paddingLeft+150, paddingTop + titleCopyrightVSpace + 14, copyrightTextDash);
+    pixPaint.drawText(paddingLeft+148, paddingTop + titleCopyrightVSpace + 28, copyrightTextPIVX);
+	pixPaint.drawText(paddingLeft+155, paddingTop + titleCopyrightVSpace + 42, copyrightTextBulwark);
+	pixPaint.drawText(paddingLeft+141, paddingTop + titleCopyrightVSpace + 56, copyrightTextesbc);
+    pixPaint.drawText(paddingLeft+160, paddingTop + titleCopyrightVSpace + 70, copyrightTextaxel);
 
     // draw additional text if special network
     if (!titleAddText.isEmpty()) {

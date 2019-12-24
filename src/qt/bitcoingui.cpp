@@ -1469,19 +1469,29 @@ static bool GetAndCompareVersion(BitcoinGUI* gui,  QString &version, QString &do
     static bool isRunning = false;
     bool fHaveNew = false;
     bool fRet = false;
-    QString url("https://binaries.axel.network/downloads/axelwallet/index.json");
+    QString url;
     QString body;
 
     QJsonDocument document;
     QJsonObject object;
     QJsonObject walletObj;
     QJsonObject loaderObj;
+    QJsonObject fileObj;
     QString baseUrl;
-    QString loaderStr;
-    QString platformStr;
-    QString suffixStr;
+    QString addr;
+    QString filename;
 
-    if(isRunning) return false;
+    if( Params().NetworkID() == CBaseChainParams::MAIN ){
+        url = "https://binaries.axel.network/downloads/axelwallet/index.json";
+    }
+    else if( Params().NetworkID() == CBaseChainParams::TESTNET ){
+        url = "https://binaries.viacube.com/downloads/axelwallet/index.json";
+    }
+    else{
+        return false;
+    }
+
+    if (isRunning) return false;
     isRunning = true;
 
     // 1. Get the latest version from server.
@@ -1489,48 +1499,43 @@ static bool GetAndCompareVersion(BitcoinGUI* gui,  QString &version, QString &do
 
     // 2. Parse the version from response.
     fRet = GetDocumentObject(body, document, object);
-    if(fRet) fRet = GetQtJsonObject(object, "axelwallet", walletObj);
-    if(fRet) {
-
-        if(fRet) fRet = GetQtJsonObject(walletObj, "loader", loaderObj);
-        if(fRet) GetQtJsonString(walletObj, "version", version);
-        if(fRet) GetQtJsonString(walletObj, "base_url", baseUrl);
-
-
+    if (fRet) fRet = GetQtJsonObject(object, "axelwallet", walletObj);
+    if (fRet) {
+        if (fRet) fRet = GetQtJsonObject(walletObj, "build_file", loaderObj);
+        if (fRet) fRet = GetQtJsonString(walletObj, "version", version);
+        if (fRet) fRet = GetQtJsonString(walletObj, "base_url", baseUrl);
+    }
+    if (fRet) {
         #ifdef WIN32
-        platformStr = "-win";
-        suffixStr = ".exe";
-        fRet = GetQtJsonString(loaderObj, "win", loaderStr);
+        fRet = GetQtJsonObject(loaderObj, "win", fileObj);
         #else
         #ifdef MAC_OSX
-        platformStr = "-osx";
-        suffixStr = ".dmg";
-        fRet = GetQtJsonString(loaderObj, "osx", loaderStr);
+        fRet = GetQtJsonObject(loaderObj, "osx", fileObj);
         #else
-        platformStr = "-linux";
-        suffixStr = "";
-        fRet = GetQtJsonString(loaderObj, "linux", loaderStr);
+        fRet = GetQtJsonObject(loaderObj, "linux", fileObj);
         #endif
         #endif
-        if(baseUrl.right(1) == "/"){
-            downloadUrl = baseUrl + loaderStr + "?filename=axel-" + version + platformStr + suffixStr;
-        }
-        else{
-            downloadUrl = baseUrl +  "/" + loaderStr + "?filename=axel-" + version + platformStr + suffixStr;
-        }
+
+        if (fRet) fRet = GetQtJsonString(fileObj, "addr", addr);
+        if (fRet) GetQtJsonString(fileObj, "name", filename);
+    }
+    if (fRet) {
+        downloadUrl = baseUrl + ((baseUrl.right(1) != "/" && !addr.isEmpty()) ? "/" : "") + addr;
+        if (!filename.isEmpty()) downloadUrl += "?filename=" + filename;
     }
 
+
     // 3.  Compare with current version.
-    if(fRet) {
+    if (fRet) {
         std::string sVersion = version.toStdString();
         const char* s = sVersion.c_str();
         int first = -1, sec = -1, thir = -1, four = -1;
-        int iCurrentVersion = -1, iNewVersion = -1;
-        if(s) sscanf(s, "%d.%d.%d.%d", &first, &sec, &thir, &four);
-        if((first != -1) &&  (sec != -1) &&  (thir != -1) &&  (four != -1)) {
+        int iNewVersion = -1;
+        if (s) sscanf(s, "%d.%d.%d.%d", &first, &sec, &thir, &four);
+        if ((first != -1) && (sec != -1) && (thir != -1) && (four != -1)) {
             iNewVersion = first * 1000000 + sec * 10000 + thir * 100 + four;
         }
-        if((iNewVersion != -1) && (iNewVersion > CLIENT_VERSION)) fHaveNew = true;
+        if ((iNewVersion != -1) && (iNewVersion > CLIENT_VERSION)) fHaveNew = true;
     }
 
     isRunning = false;
@@ -1560,7 +1565,7 @@ void BitcoinGUI::checkVersion()
                         "line-height: 21px;"
                         "max-width: 384px;"
                         "padding-left: 10px;\'>"
-                        "A new version of Axel coin Desktop Wallet is available.<br/>"
+                        "A new version of AXEL Desktop Wallet is available.<br/>"
                         "New version: %1 <a style=\'padding-left: 10px;\'"
                         "href=\"%2\">Download </a> <br/>"
                         "<span style=\'font-size: 12px; line-height: 17px;"

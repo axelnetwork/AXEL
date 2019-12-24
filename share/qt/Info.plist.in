@@ -10,6 +10,11 @@
     <string>x86_64</string>
   </array>
 
+  <key>CFBundleSupportedPlatforms</key>
+  <array>
+    <string>MacOSX</string>
+  </array>
+
   <key>CFBundleIconFile</key>
   <string>axel.icns</string>
 
@@ -29,10 +34,10 @@
   <string>????</string>
 
   <key>CFBundleExecutable</key>
-  <string>axel-qt</string>
+  <string>axel-Qt</string>
 
   <key>CFBundleIdentifier</key>
-  <string>io.axel.axel-qt</string>
+  <string>network.axel.wallet-qt</string>
 
   <key>CFBundleURLTypes</key>
   <array>
@@ -40,7 +45,7 @@
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>CFBundleURLName</key>
-      <string>io.axel.PhcPayment</string>
+      <string>network.axel.PhcPayment</string>
       <key>CFBundleURLSchemes</key>
       <array>
         <string>axel</string>
@@ -52,7 +57,7 @@
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>io.axel.paymentrequest</string>
+      <string>network.axel.paymentrequest</string>
       <key>UTTypeDescription</key>
       <string>axel payment request</string>
       <key>UTTypeConformsTo</key>
@@ -78,7 +83,7 @@
       <string>Editor</string>
       <key>LSItemContentTypes</key>
       <array>
-        <string>io.axel.paymentrequest</string>
+        <string>network.axel.paymentrequest</string>
       </array>
       <key>LSHandlerRank</key>
       <string>Owner</string>

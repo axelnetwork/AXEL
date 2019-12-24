@@ -21,8 +21,8 @@ QList<BitcoinUnits::Unit> BitcoinUnits::availableUnits()
 {
     QList<BitcoinUnits::Unit> unitlist;
     unitlist.append(AXEL);
-   // unitlist.append(mAXEL);
-   // unitlist.append(uAXEL);
+    unitlist.append(mAXEL);
+    unitlist.append(uAXEL);
     return unitlist;
 }
 

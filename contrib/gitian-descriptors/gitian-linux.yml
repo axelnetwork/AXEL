@@ -1,5 +1,5 @@
 ---
-name: "axel-linux-1.0.0"
+name: "axel-coin-linux-1.0.0"
 enable_cache: true
 suites:
 - "trusty"
@@ -29,8 +29,8 @@ packages:
 - "python"
 reference_datetime: "2018-02-26 00:00:00"
 remotes:
-- "url": "https://github.com/axel-project/axel.git"
-  "dir": "axel"
+- "url": "https://gitlab.stoamigo.com/agdn/axel-coin.git"
+  "dir": "axel-coin"
 files: []
 script: |
 
@@ -114,7 +114,7 @@ script: |
   chmod +x ${WRAP_DIR}/${prog}
   done
 
-  cd axel
+  cd axel-coin
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do

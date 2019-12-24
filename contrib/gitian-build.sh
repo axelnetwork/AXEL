@@ -17,7 +17,7 @@ osx=true
 SIGNER=
 VERSION=
 commit=false
-url=https://github.com/axel-core/axel
+url=https://gitlab.stoamigo.com/agdn/axel-coin.git
 proc=2
 mem=2000
 lxc=true
@@ -25,13 +25,13 @@ osslTarUrl=http://downloads.sourceforge.net/project/osslsigncode/osslsigncode/os
 osslPatchUrl=https://bitcoincore.org/cfields/osslsigncode-Backports-to-1.7.1.patch
 scriptName=$(basename -- "$0")
 signProg="gpg --detach-sign"
-commitFiles=true
+commitFiles=false
 
 # Help Message
 read -d '' usage <<- EOF
 Usage: $scriptName [-c|u|v|b|s|B|o|h|j|m|] signer version
 
-Run this script from the directory containing the axel, gitian-builder, gitian.sigs, and axel-detached-sigs.
+Run this script from the directory containing the axel-coin, gitian-builder, gitian.sigs, and bitcoin-detached-sigs.
 
 Arguments:
 signer          GPG signer to sign each build assert file
@@ -39,7 +39,7 @@ version		Version number, commit, or branch to build. If building a commit or bra
 
 Options:
 -c|--commit	Indicate that the version argument is for a commit or branch
--u|--url	Specify the URL of the repository. Default is https://github.com/axel-core/axel
+-u|--url	Specify the URL of the repository. Default is https://gitlab.stoamigo.com/agdn/axel-coin.git
 -v|--verify 	Verify the gitian build
 -b|--build	Do a gitian build
 -s|--sign	Make signed binaries for Windows and Mac OSX
@@ -122,7 +122,7 @@ while :; do
 	    ;;
 	# Commit or branch
 	-c|--commit)
-	    commit=true
+            commit=true
 	    ;;
 	# Number of Processes
 	-j)
@@ -180,12 +180,38 @@ while :; do
     shift
 done
 
+# Setup build environment
+if [[ $setup = true ]]
+then
+    sudo apt-get install ruby apache2 git make wget curl apt-cacher-ng python-vm-builder qemu-kvm qemu-utils firewalld
+    git clone https://github.com/bitcoin-core/gitian.sigs.git
+    git clone https://github.com/bitcoin-core/bitcoin-detached-sigs.git
+    git clone https://github.com/devrandom/gitian-builder.git
+    pushd ./gitian-builder
+    #if [[ -n "$USE_LXC" ]]
+    if [[ $lxc = true ]]
+    then
+        sudo apt-get install lxc
+        bin/make-base-vm --suite trusty --arch amd64 --lxc
+    else
+        bin/make-base-vm --suite trusty --arch amd64
+    fi
+    popd
+fi
+
 # Set up LXC
 if [[ $lxc = true ]]
 then
+    echo '===begin lxc configure==='
+    sudo brctl addbr br0
+    sudo ip addr add 10.0.3.1/24 broadcast 10.0.3.255 dev br0
+    sudo ip link set br0 up
+    sudo firewall-cmd --zone=trusted --add-interface=br0
     export USE_LXC=1
-    export LXC_BRIDGE=lxcbr0
-    sudo ifconfig lxcbr0 up 10.0.2.2
+    #export LXC_BRIDGE=lxcbr0
+    export GITIAN_HOST_IP=10.0.3.2
+    export LXC_GUEST_IP=10.0.3.5
+    sudo ifconfig lxcbr0 up 10.0.3.2
 fi
 
 # Check for OSX SDK
@@ -233,26 +259,8 @@ then
 fi
 echo ${COMMIT}
 
-# Setup build environment
-if [[ $setup = true ]]
-then
-    sudo apt-get install ruby apache2 git apt-cacher-ng python-vm-builder qemu-kvm qemu-utils
-    git clone https://github.com/axel-core/gitian.sigs.git
-    git clone https://github.com/axel-core/axel-detached-sigs.git
-    git clone https://github.com/devrandom/gitian-builder.git
-    pushd ./gitian-builder
-    if [[ -n "$USE_LXC" ]]
-    then
-        sudo apt-get install lxc
-        bin/make-base-vm --suite trusty --arch amd64 --lxc
-    else
-        bin/make-base-vm --suite trusty --arch amd64
-    fi
-    popd
-fi
-
 # Set up build
-pushd ./axel
+pushd ./axel-coin
 git fetch
 git checkout ${COMMIT}
 popd
@@ -260,8 +268,9 @@ popd
 # Build
 if [[ $build = true ]]
 then
+	echo '===begin build==='
 	# Make output folder
-	mkdir -p ./axel-binaries/${VERSION}
+	mkdir -p ./axel-coin-binaries/${VERSION}
 
 	# Build Dependencies
 	echo ""
@@ -271,7 +280,7 @@ then
 	mkdir -p inputs
 	wget -N -P inputs $osslPatchUrl
 	wget -N -P inputs $osslTarUrl
-	make -C ../axel/depends download SOURCES_PATH=`pwd`/cache/common
+	make -C ../axel-coin/depends download SOURCES_PATH=`pwd`/cache/common
 
 	# Linux
 	if [[ $linux = true ]]
@@ -279,9 +288,9 @@ then
             echo ""
 	    echo "Compiling ${VERSION} Linux"
 	    echo ""
-	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel=${COMMIT} --url axel=${url} ../axel/contrib/gitian-descriptors/gitian-linux.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-linux.yml
-	    mv build/out/axel-*.tar.gz build/out/src/axel-*.tar.gz ../axel-binaries/${VERSION}
+	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel-coin=${COMMIT} --url axel-coin=${url} ../axel-coin/contrib/gitian-descriptors/gitian-linux.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-linux.yml
+	    mv build/out/axel-*.tar.gz build/out/src/axel-*.tar.gz ../axel-coin-binaries/${VERSION}
 	fi
 	# Windows
 	if [[ $windows = true ]]
@@ -289,10 +298,10 @@ then
 	    echo ""
 	    echo "Compiling ${VERSION} Windows"
 	    echo ""
-	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel=${COMMIT} --url axel=${url} ../axel/contrib/gitian-descriptors/gitian-win.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-win-unsigned --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-win.yml
-	    mv build/out/axel-*-win-unsigned.tar.gz inputs/axel-win-unsigned.tar.gz
-	    mv build/out/axel-*.zip build/out/axel-*.exe ../axel-binaries/${VERSION}
+	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel-coin=${COMMIT} --url axel-coin=${url} ../axel-coin/contrib/gitian-descriptors/gitian-win.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-win-unsigned --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-win.yml
+	    mv build/out/axel-*-win-unsigned.tar.gz inputs/axel-coin-win-unsigned.tar.gz
+	    mv build/out/axel-*.zip build/out/axel-*.exe ../axel-coin-binaries/${VERSION}
 	fi
 	# Mac OSX
 	if [[ $osx = true ]]
@@ -300,10 +309,10 @@ then
 	    echo ""
 	    echo "Compiling ${VERSION} Mac OSX"
 	    echo ""
-	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel=${COMMIT} --url axel=${url} ../axel/contrib/gitian-descriptors/gitian-osx.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-osx-unsigned --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-osx.yml
-	    mv build/out/axel-*-osx-unsigned.tar.gz inputs/axel-osx-unsigned.tar.gz
-	    mv build/out/axel-*.tar.gz build/out/axel-*.dmg ../axel-binaries/${VERSION}
+	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel-coin=${COMMIT} --url axel-coin=${url} ../axel-coin/contrib/gitian-descriptors/gitian-osx.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-osx-unsigned --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-osx.yml
+	    mv build/out/axel-*-osx-unsigned.tar.gz inputs/axel-coin-osx-unsigned.tar.gz
+	    mv build/out/axel-*.tar.gz build/out/axel-*.dmg ../axel-coin-binaries/${VERSION}
 	fi
 	# AArch64
 	if [[ $aarch64 = true ]]
@@ -311,10 +320,11 @@ then
 	    echo ""
 	    echo "Compiling ${VERSION} AArch64"
 	    echo ""
-	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel=${COMMIT} --url axel=${url} ../axel/contrib/gitian-descriptors/gitian-aarch64.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-aarch64 --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-aarch64.yml
-	    mv build/out/axel-*.tar.gz build/out/src/axel-*.tar.gz ../axel-binaries/${VERSION}
+	    ./bin/gbuild -j ${proc} -m ${mem} --commit axel-coin=${COMMIT} --url axel-coin=${url} ../axel-coin/contrib/gitian-descriptors/gitian-aarch64.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-aarch64 --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-aarch64.yml
+	    mv build/out/axel-*.tar.gz build/out/src/axel-*.tar.gz ../axel-coin-binaries/${VERSION}
 	popd
+       fi
 
         if [[ $commitFiles = true ]]
         then
@@ -335,44 +345,45 @@ fi
 # Verify the build
 if [[ $verify = true ]]
 then
+	echo '===begin verify==='
 	# Linux
 	pushd ./gitian-builder
 	echo ""
 	echo "Verifying v${VERSION} Linux"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-linux ../axel/contrib/gitian-descriptors/gitian-linux.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-linux ../axel-coin/contrib/gitian-descriptors/gitian-linux.yml
 	# Windows
 	echo ""
 	echo "Verifying v${VERSION} Windows"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-unsigned ../axel/contrib/gitian-descriptors/gitian-win.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-unsigned ../axel-coin/contrib/gitian-descriptors/gitian-win.yml
 	# Mac OSX
 	echo ""
 	echo "Verifying v${VERSION} Mac OSX"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-unsigned ../axel/contrib/gitian-descriptors/gitian-osx.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-unsigned ../axel-coin/contrib/gitian-descriptors/gitian-osx.yml
 	# AArch64
 	echo ""
 	echo "Verifying v${VERSION} AArch64"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-aarch64 ../axel/contrib/gitian-descriptors/gitian-aarch64.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-aarch64 ../axel-coin/contrib/gitian-descriptors/gitian-aarch64.yml
 	# Signed Windows
 	echo ""
 	echo "Verifying v${VERSION} Signed Windows"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../axel/contrib/gitian-descriptors/gitian-osx-signer.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../axel-coin/contrib/gitian-descriptors/gitian-osx-signer.yml
 	# Signed Mac OSX
 	echo ""
 	echo "Verifying v${VERSION} Signed Mac OSX"
 	echo ""
-	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../axel/contrib/gitian-descriptors/gitian-osx-signer.yml
+	./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../axel-coin/contrib/gitian-descriptors/gitian-osx-signer.yml
 	popd
 fi
 
 # Sign binaries
 if [[ $sign = true ]]
 then
-
+        echo '===begin sign==='
         pushd ./gitian-builder
 	# Sign Windows
 	if [[ $windows = true ]]
@@ -380,10 +391,10 @@ then
 	    echo ""
 	    echo "Signing ${VERSION} Windows"
 	    echo ""
-	    ./bin/gbuild -i --commit signature=${COMMIT} ../axel/contrib/gitian-descriptors/gitian-win-signer.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-win-signed --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-win-signer.yml
-	    mv build/out/axel-*win64-setup.exe ../axel-binaries/${VERSION}
-	    mv build/out/axel-*win32-setup.exe ../axel-binaries/${VERSION}
+	    ./bin/gbuild -i --commit signature=${COMMIT} ../axel-coin/contrib/gitian-descriptors/gitian-win-signer.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-win-signed --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-win-signer.yml
+	    mv build/out/axel-*win64-setup.exe ../axel-coin-binaries/${VERSION}
+	    mv build/out/axel-*win32-setup.exe ../axel-coin-binaries/${VERSION}
 	fi
 	# Sign Mac OSX
 	if [[ $osx = true ]]
@@ -391,9 +402,9 @@ then
 	    echo ""
 	    echo "Signing ${VERSION} Mac OSX"
 	    echo ""
-	    ./bin/gbuild -i --commit signature=${COMMIT} ../axel/contrib/gitian-descriptors/gitian-osx-signer.yml
-	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-osx-signed --destination ../gitian.sigs/ ../axel/contrib/gitian-descriptors/gitian-osx-signer.yml
-	    mv build/out/axel-osx-signed.dmg ../axel-binaries/${VERSION}/axel-${VERSION}-osx.dmg
+	    ./bin/gbuild -i --commit signature=${COMMIT} ../axel-coin/contrib/gitian-descriptors/gitian-osx-signer.yml
+	    ./bin/gsign -p $signProg --signer $SIGNER --release ${VERSION}-osx-signed --destination ../gitian.sigs/ ../axel-coin/contrib/gitian-descriptors/gitian-osx-signer.yml
+	    mv build/out/axel-osx-signed.dmg ../axel-coin-binaries/${VERSION}/axel-${VERSION}-osx.dmg
 	fi
 	popd
 

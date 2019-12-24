@@ -519,9 +519,11 @@ std::string LicenseInfo()
            "\n" +
            FormatParagraph(_("Copyright (C) 2015-2017 The PIVX Core Developers")) + "\n" +
            "\n" +
-           FormatParagraph(_("Copyright (C) 2017-2018 The XDNA Core Developers")) + "\n" +
+           FormatParagraph(_("Copyright (C) 2017-2018 The Bulwark developers")) + "\n" +
            "\n" +
-           FormatParagraph(_("Copyright (C) 2018-2019 The AXEL Core Developers")) + "\n" +
+           FormatParagraph(_("Copyright (C) 2018-2019 The esbcoin Core developers")) + "\n" +
+           "\n" +
+	   	   FormatParagraph(_("Copyright (C) 2019-"))+"     " + FormatParagraph(_("The AXEL Core Developers")) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +

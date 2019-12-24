@@ -190,8 +190,7 @@ BITCOIN_QT_H = \
   qt/walletview.h \
   qt/winshutdownmonitor.h \
   qt/toolspage.h \
-  qt/qssloader.h \
-  qt/labelclickable.h
+  qt/qssloader.h
 
 RES_ICONS = \
   qt/res/icons/add.png \
@@ -212,6 +211,7 @@ RES_ICONS = \
   qt/res/icons/connect4_16.png \
   qt/res/icons/debugwindow.png \
   qt/res/icons/edit.png \
+  qt/res/icons/edit_white.png \
   qt/res/icons/editcopy.png \
   qt/res/icons/editpaste.png \
   qt/res/icons/explorer.png \
@@ -219,7 +219,14 @@ RES_ICONS = \
   qt/res/icons/eye.png \
   qt/res/icons/eye_minus.png \
   qt/res/icons/eye_plus.png \
+  qt/res/icons/icon_facebook.png \
+  qt/res/icons/icon_twitter.png \
+  qt/res/icons/icon_telegram.png \
+  qt/res/icons/icon_discord.png \
+  qt/res/icons/icon_www.png \
+  qt/res/icons/icon_explorer.png \
   qt/res/icons/filesave.png \
+  qt/res/icons/filesave_white.png \
   qt/res/icons/history.png \
   qt/res/icons/key.png \
   qt/res/icons/lock_closed.png \
@@ -229,6 +236,7 @@ RES_ICONS = \
   qt/res/icons/qrcode.png \
   qt/res/icons/quit.png \
   qt/res/icons/receive.png \
+  qt/res/icons/receive_white.png \
   qt/res/icons/tools.png \
   qt/res/icons/blockexplorer.png \
   qt/res/icons/remove.png \
@@ -238,6 +246,7 @@ RES_ICONS = \
   qt/res/icons/synced.png \
   qt/res/icons/trade.png \
   qt/res/icons/transaction0.png \
+  qt/res/icons/transaction0_white.png \
   qt/res/icons/transaction2.png \
   qt/res/icons/transaction_conflicted.png \
   qt/res/icons/tx_inout.png \
@@ -262,6 +271,7 @@ RES_ICONS = \
   qt/res/dark/icons/connect4_16.png \
   qt/res/dark/icons/debugwindow.png \
   qt/res/dark/icons/edit.png \
+  qt/res/dark/icons/edit_white.png \
   qt/res/dark/icons/editcopy.png \
   qt/res/dark/icons/editpaste.png \
   qt/res/dark/icons/explorer.png \
@@ -269,7 +279,14 @@ RES_ICONS = \
   qt/res/dark/icons/eye.png \
   qt/res/dark/icons/eye_minus.png \
   qt/res/dark/icons/eye_plus.png \
+  qt/res/dark/icons/icon_facebook.png \
+  qt/res/dark/icons/icon_twitter.png \
+  qt/res/dark/icons/icon_telegram.png \
+  qt/res/dark/icons/icon_discord.png \
+  qt/res/dark/icons/icon_www.png \
+  qt/res/dark/icons/icon_explorer.png \
   qt/res/dark/icons/filesave.png \
+  qt/res/dark/icons/filesave_white.png \
   qt/res/dark/icons/history.png \
   qt/res/dark/icons/key.png \
   qt/res/dark/icons/lock_closed.png \
@@ -279,6 +296,7 @@ RES_ICONS = \
   qt/res/dark/icons/qrcode.png \
   qt/res/dark/icons/quit.png \
   qt/res/dark/icons/receive.png \
+  qt/res/dark/icons/receive_white.png \
   qt/res/dark/icons/tools.png \
   qt/res/dark/icons/blockexplorer.png \
   qt/res/dark/icons/remove.png \
@@ -288,6 +306,7 @@ RES_ICONS = \
   qt/res/dark/icons/synced.png \
   qt/res/dark/icons/trade.png \
   qt/res/dark/icons/transaction0.png \
+  qt/res/dark/icons/transaction0_white.png \
   qt/res/dark/icons/transaction2.png \
   qt/res/dark/icons/transaction_conflicted.png \
   qt/res/dark/icons/tx_inout.png \
@@ -297,6 +316,9 @@ RES_ICONS = \
 
 RES_FONTS = \
     qt/res/fonts/axel_font.ttf
+
+RES_TOS = \
+    qt/res/tos/AXEL-Wallet-User-Agreement.htm
 
 BITCOIN_QT_CPP = \
   qt/bitcoinaddressvalidator.cpp \
@@ -375,6 +397,8 @@ RES_IMAGES = \
   qt/res/images/leftArrow_small.png \
   qt/res/images/rightArrow_small.png \
   qt/res/images/qtreeview_selected.png \
+  qt/res/images/branch-closed.png \
+  qt/res/images/branch-open.png \
   qt/res/dark/images/about.png \
   qt/res/dark/images/splash.png \
   qt/res/dark/images/axel_logo_horizontal.png \
@@ -384,15 +408,53 @@ RES_IMAGES = \
   qt/res/dark/images/upArrow_small.png \
   qt/res/dark/images/leftArrow_small.png \
   qt/res/dark/images/rightArrow_small.png \
-  qt/res/dark/images/qtreeview_selected.png
+  qt/res/dark/images/qtreeview_selected.png \
+  qt/res/dark/images/branch-closed.png \
+  qt/res/dark/images/branch-open.png
 
 
 RES_CSS = \
   qt/res/css/default.css \
   qt/res/dark/css/dark.css
 
-RES_MOVIES = $(wildcard $(srcdir)/qt/res/movies/spinner-*.png) \
-             $(wildcard $(srcdir)/qt/res/dark/movies/spinner-*.png)
+RES_MOVIES = $(wildcard $(srcdir)/qt/res/movies/spinner-*.png)
+
+RES_DARK_MOVIES = \
+  qt/res/dark/movies/spinner-000.png \
+  qt/res/dark/movies/spinner-001.png \
+  qt/res/dark/movies/spinner-002.png \
+  qt/res/dark/movies/spinner-003.png \
+  qt/res/dark/movies/spinner-004.png \
+  qt/res/dark/movies/spinner-005.png \
+  qt/res/dark/movies/spinner-006.png \
+  qt/res/dark/movies/spinner-007.png \
+  qt/res/dark/movies/spinner-008.png \
+  qt/res/dark/movies/spinner-009.png \
+  qt/res/dark/movies/spinner-010.png \
+  qt/res/dark/movies/spinner-011.png \
+  qt/res/dark/movies/spinner-012.png \
+  qt/res/dark/movies/spinner-013.png \
+  qt/res/dark/movies/spinner-014.png \
+  qt/res/dark/movies/spinner-015.png \
+  qt/res/dark/movies/spinner-016.png \
+  qt/res/dark/movies/spinner-017.png \
+  qt/res/dark/movies/spinner-018.png \
+  qt/res/dark/movies/spinner-019.png \
+  qt/res/dark/movies/spinner-020.png \
+  qt/res/dark/movies/spinner-021.png \
+  qt/res/dark/movies/spinner-022.png \
+  qt/res/dark/movies/spinner-023.png \
+  qt/res/dark/movies/spinner-024.png \
+  qt/res/dark/movies/spinner-025.png \
+  qt/res/dark/movies/spinner-026.png \
+  qt/res/dark/movies/spinner-027.png \
+  qt/res/dark/movies/spinner-028.png \
+  qt/res/dark/movies/spinner-029.png \
+  qt/res/dark/movies/spinner-030.png \
+  qt/res/dark/movies/spinner-031.png \
+  qt/res/dark/movies/spinner-032.png \
+  qt/res/dark/movies/spinner-033.png \
+  qt/res/dark/movies/spinner-034.png
 
 BITCOIN_RC = qt/res/axel-qt-res.rc
 
@@ -403,7 +465,7 @@ qt_libbitcoinqt_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
   $(QT_INCLUDES) $(QT_DBUS_INCLUDES) $(PROTOBUF_CFLAGS) $(QR_CFLAGS)
 
 qt_libbitcoinqt_a_SOURCES = $(BITCOIN_QT_CPP) $(BITCOIN_QT_H) $(QT_FORMS_UI) \
-  $(QT_QRC) $(QT_QRC_LOCALE) $(QT_TS) $(PROTOBUF_PROTO) $(RES_ICONS) $(RES_IMAGES) $(RES_CSS) $(RES_MOVIES) $(RES_FONTS)
+  $(QT_QRC) $(QT_QRC_LOCALE) $(QT_TS) $(PROTOBUF_PROTO) $(RES_ICONS) $(RES_IMAGES) $(RES_CSS) $(RES_MOVIES) $(RES_DARK_MOVIES) $(RES_FONTS) $(RES_TOS)
 
 nodist_qt_libbitcoinqt_a_SOURCES = $(QT_MOC_CPP) $(QT_MOC) $(PROTOBUF_CC) \
   $(PROTOBUF_H) $(QT_QRC_CPP) $(QT_QRC_LOCALE_CPP)
@@ -464,7 +526,7 @@ $(QT_QRC_LOCALE_CPP): $(QT_QRC_LOCALE) $(QT_QM)
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(RCC) -name axel_locale $(@D)/$(<F) | \
 	  $(SED) -e '/^\*\*.*Created:/d' -e '/^\*\*.*by:/d' > $@
 
-$(QT_QRC_CPP): $(QT_QRC) $(QT_FORMS_H) $(RES_ICONS) $(RES_IMAGES) $(RES_CSS) $(RES_MOVIES) $(PROTOBUF_H) $(RES_FONTS)
+$(QT_QRC_CPP): $(QT_QRC) $(QT_FORMS_H) $(RES_ICONS) $(RES_IMAGES) $(RES_CSS) $(RES_MOVIES) $(RES_DARK_MOVIES) $(PROTOBUF_H) $(RES_FONTS) $(RES_TOS)
 	@test -f $(RCC)
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(RCC) -name axel $< | \
 	  $(SED) -e '/^\*\*.*Created:/d' -e '/^\*\*.*by:/d' > $@

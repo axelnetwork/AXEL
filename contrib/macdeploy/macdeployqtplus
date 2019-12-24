@@ -606,7 +606,7 @@ else:
 
 # ------------------------------------------------
 
-target = os.path.join("dist", "axel-qt.app")
+target = os.path.join("dist", "AXEL Wallet.app")
 
 if verbose >= 2:
     print("+ Copying source bundle +")
@@ -712,7 +712,10 @@ if config.sign and 'CODESIGNARGS' not in os.environ:
 elif config.sign:
     if verbose >= 1:
         print("Code-signing app bundle %s"%(target,))
-    subprocess.check_call("codesign --force %s %s"%(os.environ['CODESIGNARGS'], target), shell=True)
+    os.system('sh contrib/macdeploy/patchAllQtFramework.sh')
+    time.sleep(2)
+    target1 = os.path.join("dist", "AXEL\\ Wallet.app")
+    subprocess.check_call("codesign --force %s %s"%(os.environ['CODESIGNARGS'], target1), shell=True)
 
 # ------------------------------------------------
 

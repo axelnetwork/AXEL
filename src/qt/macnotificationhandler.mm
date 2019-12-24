@@ -14,7 +14,7 @@
 - (NSString *)__bundleIdentifier
 {
     if (self == [NSBundle mainBundle]) {
-        return @"io.axel.axelCore-Qt";
+        return @"network.axel.wallet-qt";
     } else {
         return [self __bundleIdentifier];
     }

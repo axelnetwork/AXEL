@@ -60,12 +60,14 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
         licenseInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
         // Replace newlines with HTML breaks
         licenseInfoHTML.replace("\n\n", "<br><br>");
-
+        //licenseInfoHTML.replace("  ", "&nbsp;&nbsp;");
+	licenseInfoHTML.replace("     ", "<span style='color:rgba(0,0,0,0)'>2019 </span>");
         ui->aboutMessage->setTextFormat(Qt::RichText);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         text = version + "\n" + licenseInfo;
         ui->aboutMessage->setText(version + "<br><br>" + licenseInfoHTML);
         ui->aboutMessage->setWordWrap(true);
+        ui->aboutMessage->setTextInteractionFlags(Qt::NoTextInteraction|Qt::LinksAccessibleByMouse);
         ui->helpMessage->setVisible(false);
     } else {
         setWindowTitle(tr("Command-line options"));
