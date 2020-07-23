@@ -26,7 +26,7 @@ color:#000;
       <string notr="true">QLabel { font-style:italic; }</string>
      </property>
      <property name="text">
-      <string>Welcome to AXEL.</string>
+      <string>Welcome to AXEL Wallet.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -52,7 +52,7 @@ color:#000;
    <item>
     <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>As this is the first time the program is launched, you can choose where AXEL wallet will store its data.</string>
+      <string>As this is the first time the program is launched, you can choose where AXEL Wallet will store its data.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -62,7 +62,7 @@ color:#000;
    <item>
     <widget class="QLabel" name="sizeWarningLabel">
      <property name="text">
-      <string>AXEL wallet will download and store a copy of the AXEL block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</string>
+      <string>AXEL Wallet will download and store a copy of the AXEL block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

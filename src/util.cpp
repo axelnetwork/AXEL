@@ -426,7 +426,12 @@ boost::filesystem::path GetDefaultDataDir()
 // Unix: ~/.axel
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "axel";
+    //return GetSpecialFolderPath(CSIDL_APPDATA) / "axel";
+	//if os is win 10,set default datadir to C:\Users\Username\axel
+    if(IsSystemWin10())
+		return GetSpecialFolderPath(CSIDL_APPDATA).parent_path().parent_path() / "AXEL_Wallet";
+    else
+       return GetSpecialFolderPath(CSIDL_APPDATA) / "AXEL_Wallet"; 
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -796,3 +801,24 @@ void SetThreadPriority(int nPriority)
 #endif // PRIO_THREAD
 #endif // WIN32
 }
+
+bool IsSystemWin10()
+{
+#ifdef WIN32
+	typedef void(__stdcall*NTPROC)(DWORD*, DWORD*, DWORD*);
+	HINSTANCE hinst = LoadLibrary("ntdll.dll");
+	DWORD dwMajor, dwMinor, dwBuildNumber;
+	NTPROC proc = (NTPROC)GetProcAddress(hinst, "RtlGetNtVersionNumbers"); 
+	proc(&dwMajor, &dwMinor, &dwBuildNumber); 
+	if (dwMajor == 10 && dwMinor == 0)	//win 10
+	{
+		return true;
+	}
+
+	return false;
+#else
+	return false;
+#endif
+}
+
+

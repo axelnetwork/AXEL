@@ -163,7 +163,7 @@ QT_TRANSLATE_NOOP("axel-core", ""
 "It is also recommended to set alertnotify so you are notified of problems;\n"
 "for example: alertnotify=echo %%s | mail -s \"axel Alert\" admin@foo.com\n"),
 QT_TRANSLATE_NOOP("axel-core", ""
-"Unable to bind to %s on this computer. AXEL is probably already running."),
+"Unable to bind to %s on this computer. AXEL Wallet is probably already running."),
 QT_TRANSLATE_NOOP("axel-core", ""
 "Unable to locate enough Obfuscation denominated funds for this transaction."),
 QT_TRANSLATE_NOOP("axel-core", ""
@@ -238,7 +238,7 @@ QT_TRANSLATE_NOOP("axel-core", "Connection options:"),
 QT_TRANSLATE_NOOP("axel-core", "Copyright (C) 2009-%i The Bitcoin Core Developers"),
 QT_TRANSLATE_NOOP("axel-core", "Copyright (C) 2014-%i The Dash Core Developers"),
 QT_TRANSLATE_NOOP("axel-core", "Copyright (C) 2015-%i The PIVX Core Developers"),
-QT_TRANSLATE_NOOP("axel-core", "Copyright (C) 2018-%i The AXEL Core Developers"),
+QT_TRANSLATE_NOOP("axel-core", "Copyright (C) 2018-%i The AXEL Wallet Developers"),
 QT_TRANSLATE_NOOP("axel-core", "Corrupted block database detected"),
 QT_TRANSLATE_NOOP("axel-core", "Could not parse -rpcbind value %s as network address"),
 QT_TRANSLATE_NOOP("axel-core", "Could not parse masternode.conf"),
@@ -434,7 +434,7 @@ QT_TRANSLATE_NOOP("axel-core", "Verifying blocks..."),
 QT_TRANSLATE_NOOP("axel-core", "Verifying wallet..."),
 QT_TRANSLATE_NOOP("axel-core", "Wallet %s resides outside data directory %s"),
 QT_TRANSLATE_NOOP("axel-core", "Wallet is locked."),
-QT_TRANSLATE_NOOP("axel-core", "Wallet needed to be rewritten: restart AXEL wallet to complete"),
+QT_TRANSLATE_NOOP("axel-core", "Wallet needed to be rewritten: restart AXEL Wallet to complete"),
 QT_TRANSLATE_NOOP("axel-core", "Wallet options:"),
 QT_TRANSLATE_NOOP("axel-core", "Wallet window title"),
 QT_TRANSLATE_NOOP("axel-core", "Warning"),

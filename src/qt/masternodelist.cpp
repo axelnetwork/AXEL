@@ -162,6 +162,7 @@ void MasternodeList::StartAlias(std::string strAlias)
     strStatusHtml += "</center>";
 
     QMessageBox msg;
+	msg.setWindowTitle("AXEL Wallet");
     msg.setText(QString::fromStdString(strStatusHtml));
     msg.exec();
 
@@ -207,6 +208,7 @@ void MasternodeList::StartAll(std::string strCommand)
     }
 
     QMessageBox msg;
+	msg.setWindowTitle("AXEL Wallet");
     msg.setText(QString::fromStdString(returnObj));
     msg.exec();
 

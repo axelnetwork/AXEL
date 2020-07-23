@@ -169,6 +169,7 @@ extern UniValue bip38encrypt(const UniValue& params, bool fHelp);
 extern UniValue bip38decrypt(const UniValue& params, bool fHelp);
 
 extern UniValue getgenerate(const UniValue& params, bool fHelp); // in rpcmining.cpp
+extern UniValue generate(const UniValue& params, bool fHelp);
 extern UniValue setgenerate(const UniValue& params, bool fHelp);
 extern UniValue getnetworkhashps(const UniValue& params, bool fHelp);
 extern UniValue gethashespersec(const UniValue& params, bool fHelp);
@@ -231,6 +232,9 @@ extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
 extern UniValue getblockcount(const UniValue& params, bool fHelp); // in rpcblockchain.cpp
 extern UniValue getbestblockhash(const UniValue& params, bool fHelp);
+extern UniValue waitfornewblock(const UniValue& params, bool fHelp);
+extern UniValue waitforblock(const UniValue& params, bool fHelp);
+extern UniValue waitforblockheight(const UniValue& params, bool fHelp);
 extern UniValue getdifficulty(const UniValue& params, bool fHelp);
 extern UniValue settxfee(const UniValue& params, bool fHelp);
 extern UniValue getmempoolinfo(const UniValue& params, bool fHelp);
@@ -277,5 +281,6 @@ extern bool HTTPReq_REST(AcceptedConnection* conn,
     std::string& strURI,
     std::map<std::string, std::string>& mapHeaders,
     bool fRun);
+void RPCNotifyBlockChange(const uint256 nHeight);
 
 #endif // BITCOIN_RPCSERVER_H

@@ -99,12 +99,14 @@ CInv::CInv()
 {
     type = 0;
     hash = 0;
+    counts = 1;
 }
 
 CInv::CInv(int typeIn, const uint256& hashIn)
 {
     type = typeIn;
     hash = hashIn;
+    counts = 1;
 }
 
 CInv::CInv(const std::string& strType, const uint256& hashIn)
@@ -119,6 +121,7 @@ CInv::CInv(const std::string& strType, const uint256& hashIn)
     if (i == ARRAYLEN(ppszTypeName))
         LogPrint("net", "CInv::CInv(string, uint256) : unknown type '%s'", strType);
     hash = hashIn;
+    counts = 1;
 }
 
 bool operator<(const CInv& a, const CInv& b)

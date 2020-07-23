@@ -48,7 +48,7 @@ static bool AppInitRawTx(int argc, char* argv[])
 
     if (argc < 2 || mapArgs.count("-?") || mapArgs.count("-help")) {
         // First part of help message is specific to this utility
-        std::string strUsage = _("AXEL Core TX utility version") + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = _("AXEL Wallet TX utility version") + " " + FormatFullVersion() + "\n\n" +
                                _("Usage:") + "\n" +
                                "  axel-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded axel transaction") + "\n" +
                                "  axel-tx [options] -create [commands]   " + _("Create hex-encoded axel transaction") + "\n" +

@@ -246,6 +246,7 @@ void CoinControlDialog::buttonToggleLockClicked()
         updateDialogLabels();
     } else {
         QMessageBox msgBox;
+		msgBox.setWindowTitle("AXEL Wallet");
         msgBox.setObjectName("lockMessageBox");
         msgBox.setStyleSheet(GUIUtil::loadStyleSheet());
         msgBox.setText(tr("Please switch to \"List mode\" to use this function."));

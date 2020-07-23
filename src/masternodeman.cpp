@@ -597,6 +597,17 @@ CMasternode* CMasternodeMan::Find(const CPubKey& pubKeyMasternode)
     return nullptr;
 }
 
+CMasternode* CMasternodeMan::FindByCollateralAddress(const CPubKey& pubKeyCollateralAddress)
+{
+    LOCK(cs);
+
+    BOOST_FOREACH (CMasternode& mn, vMasternodes) {
+        if (mn.pubKeyCollateralAddress == pubKeyCollateralAddress)
+            return &mn;
+    }
+    return nullptr;
+}
+
 CMasternode* CMasternodeMan::Find(const CService& service)
 {
     LOCK(cs);
@@ -914,6 +925,22 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
     if (strCommand == "mnb") { //Masternode Broadcast
         CMasternodeBroadcast mnb;
         vRecv >> mnb;
+
+        auto pmn1 = mnodeman.FindByCollateralAddress(mnb.pubKeyCollateralAddress);
+        if(pmn1 && pmn1->vin != mnb.vin)
+        {
+            if(pmn1->sigTime <= mnb.sigTime)
+            {
+                LogPrintf("mnb - More than one vin used for one collateral address and mnb sigTime %d young than pmn1 %d,vin:%s,discard it\n",mnb.sigTime,pmn1->sigTime,mnb.vin.prevout.hash.ToString());
+                return;
+            }
+            else
+            {
+                LogPrintf("mnb - More than one vin used for one collateral address and mnb sigTime %d old than pmn1 %d,vin:%s,remove pmn1\n",mnb.sigTime,pmn1->sigTime,mnb.vin.prevout.hash.ToString());
+                pmn1->activeState = CMasternode::MASTERNODE_REMOVE;
+                mnodeman.CheckAndRemove();
+            }
+        }
 
         auto pmn = mnodeman.Find(mnb.addr);
 

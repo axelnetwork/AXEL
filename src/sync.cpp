@@ -146,6 +146,9 @@ void AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine,
         if (i.first == cs)
             return;
     fprintf(stderr, "Assertion failed: lock %s not held in %s:%i; locks held:\n%s", pszName, pszFile, nLine, LocksHeld().c_str());
+
+    LogPrintf("++++++Assertion failed: lock %s not held in %s:%i; locks held:\n%s", pszName, pszFile, nLine, LocksHeld().c_str());
+
     abort();
 }
 

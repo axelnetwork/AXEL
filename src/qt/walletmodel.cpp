@@ -35,6 +35,13 @@ void BalanceWorker::makeBalance(const bool& watchOnly)
     if (!pwalletMain) return;
 
     {
+        // try to get required locks upfront. if not obtain the lock, return directly,
+        // This avoids deadlock if the core is holding the locks for a longer time - for
+        // example, when generate block.
+        // but the balance of address on GUI will not update sometimes
+        // if want to show banance exactly, should use LOCK(cs_main),but will stuck
+        TRY_LOCK(cs_main, lockMain);
+        if (!lockMain) return;
         TRY_LOCK(pwalletMain->cs_wallet, lockWallet);
         if (!lockWallet) return;
         qDebug() << __FUNCTION__ << ": TRY_LOCK(pwalletMain->cs_wallet, lockWallet)";
@@ -115,6 +122,14 @@ CAmount WalletModel::getAddressBalance(const QString address)
         // make a new adresses balances
         typedef std::map<CTxDestination, CAmount> balances_t;
         balances_t balances = pwalletMain->GetAddressBalances();
+        if(balances.empty())
+        {
+           // get balance by adress from cache
+           auto it = mapAddressBalances.find(address);
+           if (it != mapAddressBalances.end())
+           return it->second;
+        }
+		
         BOOST_FOREACH( balances_t::value_type &el, balances ) {
             std::string vAddress = CBitcoinAddress(el.first).ToString();
             mapAddressBalances[QString::fromStdString(vAddress)] += el.second;

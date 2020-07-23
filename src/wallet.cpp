@@ -2981,6 +2981,15 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
     map<CTxDestination, CAmount> balances;
 
     {
+        // try to get required locks upfront. if not obtain the lock, return directly,
+        // This avoids deadlock if the core is holding the locks for a longer time - for
+        // example, when generate block.
+        // but the balance of address on GUI will not update sometimes
+        // if want to show banance exactly, should use LOCK(cs_main),but will stuck
+        TRY_LOCK(cs_main, lockMain);
+        if (!lockMain) {
+            return balances;
+        }
         LOCK(cs_wallet);
         BOOST_FOREACH (PAIRTYPE(uint256, CWalletTx) walletEntry, mapWallet) {
             CWalletTx* pcoin = &walletEntry.second;

@@ -256,7 +256,10 @@ QString TransactionDesc::toHTML(CWallet* wallet, CWalletTx& wtx, TransactionReco
 
     //QString txIDWithHref = "<a href=\"https://go.axel.network/transactions/?transaction_hash=" + rec->getTxID() + "&view=public" + "\">" + rec->getTxID() + "</a>";
 	QString txIDWithHref = "<a href=\"https://go.axel.network/#/transaction/" + rec->getTxID() + "\">" + rec->getTxID() + "</a>";
-    strHTML += "<b>" + tr("Transaction ID") + ":</b> " + txIDWithHref + "<br>";
+	if( Params().NetworkID() == CBaseChainParams::MAIN )
+    	strHTML += "<b>" + tr("Transaction ID") + ":</b> " + txIDWithHref + "<br>";
+	else
+		strHTML += "<b>" + tr("Transaction ID") + ":</b> " + rec->getTxID() + "<br>";
     strHTML += "<b>" + tr("Output index") + ":</b> " + QString::number(rec->getOutputIndex()) + "<br>";
 
     // Message from normal axel:URI (axel:XyZ...?message=example)

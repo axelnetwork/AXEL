@@ -55,15 +55,15 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
 
     QPushButton* exportButton = new QPushButton(tr("&Export"), this);
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
-#ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
+//#ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
     exportButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/export")));
-#endif
+//#endif
 
     QPushButton* refreshButton = new QPushButton(tr("&Refresh"), this);
     refreshButton->setToolTip(tr("Refresh the data in the table"));
-#ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    refreshButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/tx_inout")));
-#endif
+//#ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
+    refreshButton->setIcon(QIcon(GUIUtil::getThemeImage(":/icons/refresh")));
+//#endif
 
     hbox_buttons->addWidget(refreshButton);
     hbox_buttons->addStretch();

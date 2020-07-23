@@ -14,8 +14,21 @@
 
 #include <stdint.h>
 #include <univalue.h>
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
+
 
 using namespace std;
+
+struct CUpdatedBlock
+{
+    uint256 hash;
+    int height;
+};
+static boost::mutex cs_blockchange;
+static boost::condition_variable cond_blockchange;
+static CUpdatedBlock latestblock;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
@@ -78,6 +91,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
 
+    result.push_back(Pair("modifier", strprintf("%016x", blockindex->nStakeModifier)));
+
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
     CBlockIndex* pnext = chainActive.Next(blockindex);
@@ -127,6 +142,148 @@ UniValue getbestblockhash(const UniValue& params, bool fHelp)
             HelpExampleCli("getbestblockhash", "") + HelpExampleRpc("getbestblockhash", ""));
 
     return chainActive.Tip()->GetBlockHash().GetHex();
+}
+
+void RPCNotifyBlockChange(const uint256 hashBlock)
+{
+    CBlockIndex* pindex = nullptr;
+    pindex = mapBlockIndex.at(hashBlock);
+    if(pindex) {
+        boost::unique_lock<boost::mutex> lock(cs_blockchange);
+        latestblock.hash = pindex->GetBlockHash();
+        latestblock.height = pindex->nHeight;
+    }
+    cond_blockchange.notify_all();
+}
+
+UniValue waitfornewblock(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw std::runtime_error(
+            "waitfornewblock ( timeout )\n"
+            "\nWaits for a specific new block and returns useful info about it.\n"
+            "\nReturns the current block on timeout or exit.\n"
+
+            "\nArguments:\n"
+            "1. timeout (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+
+            "\nResult:\n"
+            "{                           (json object)\n"
+            "  \"hash\" : {       (string) The blockhash\n"
+            "  \"height\" : {     (int) Block height\n"
+            "}\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("waitfornewblock", "1000")
+            + HelpExampleRpc("waitfornewblock", "1000")
+        );
+    int timeout = 0;
+    if (params.size() > 0)
+        timeout = params[0].get_int();
+    CUpdatedBlock block;
+    {
+        boost::unique_lock<boost::mutex> lock(cs_blockchange);
+        block = latestblock;
+        if(timeout)
+            cond_blockchange.wait_for(lock, boost::chrono::milliseconds(timeout), [&block]{return latestblock.height != block.height || latestblock.hash != block.hash || !IsRPCRunning(); });
+        else
+            cond_blockchange.wait(lock, [&block]{return latestblock.height != block.height || latestblock.hash != block.hash || !IsRPCRunning(); });
+        block = latestblock;
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("hash", block.hash.GetHex()));
+    ret.push_back(Pair("height", block.height));
+    return ret;
+}
+
+UniValue waitforblock(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw std::runtime_error(
+            "waitforblock blockhash ( timeout )\n"
+            "\nWaits for a specific new block and returns useful info about it.\n"
+            "\nReturns the current block on timeout or exit.\n"
+
+            "\nArguments:\n"
+            "1. \"blockhash\" (required, string) Block hash to wait for.\n"
+            "2. timeout       (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+
+            "\nResult:\n"
+            "{                           (json object)\n"
+            "  \"hash\" : {       (string) The blockhash\n"
+            "  \"height\" : {     (int) Block height\n"
+            "}\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("waitforblock", "\"0000000000079f8ef3d2c688c244eb7a4570b24c9ed7b4a8c619eb02596f8862\", 1000")
+            + HelpExampleRpc("waitforblock", "\"0000000000079f8ef3d2c688c244eb7a4570b24c9ed7b4a8c619eb02596f8862\", 1000")
+        );
+    int timeout = 0;
+
+    uint256 hash = uint256S(params[0].get_str());
+
+    if (params.size() > 1)
+        timeout = params[1].get_int();
+
+    CUpdatedBlock block;
+    {
+        boost::unique_lock<boost::mutex> lock(cs_blockchange);
+        if(timeout)
+            cond_blockchange.wait_for(lock, boost::chrono::milliseconds(timeout), [&hash]{return latestblock.hash == hash || !IsRPCRunning();});
+        else
+            cond_blockchange.wait(lock, [&hash]{return latestblock.hash == hash || !IsRPCRunning(); });
+        block = latestblock;
+    }
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("hash", block.hash.GetHex()));
+    ret.push_back(Pair("height", block.height));
+    return ret;
+}
+
+UniValue waitforblockheight(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw std::runtime_error(
+            "waitforblockheight height ( timeout )\n"
+            "\nWaits for (at least) block height and returns the height and hash\n"
+            "of the current tip.\n"
+            "\nReturns the current block on timeout or exit.\n"
+
+            "\nArguments:\n"
+            "1. height  (required, int) Block height to wait for (int)\n"
+            "2. timeout (int, optional, default=0) Time in milliseconds to wait for a response. 0 indicates no timeout.\n"
+
+            "\nResult:\n"
+            "{                           (json object)\n"
+            "  \"hash\" : {       (string) The blockhash\n"
+            "  \"height\" : {     (int) Block height\n"
+            "}\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("waitforblockheight", "\"100\", 1000")
+            + HelpExampleRpc("waitforblockheight", "\"100\", 1000")
+        );
+    int timeout = 0;
+
+    int height = params[0].get_int();
+
+    if (params.size() > 1)
+        timeout = params[1].get_int();
+
+    CUpdatedBlock block;
+    {
+        boost::unique_lock<boost::mutex> lock(cs_blockchange);
+        if(timeout)
+            cond_blockchange.wait_for(lock, boost::chrono::milliseconds(timeout), [&height]{return latestblock.height >= height || !IsRPCRunning();});
+        else
+            cond_blockchange.wait(lock, [&height]{return latestblock.height >= height || !IsRPCRunning(); });
+        block = latestblock;
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("hash", block.hash.GetHex()));
+    ret.push_back(Pair("height", block.height));
+    return ret;
 }
 
 UniValue getdifficulty(const UniValue& params, bool fHelp)

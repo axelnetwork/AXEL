@@ -253,6 +253,14 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
         return false;
     }
 
+    auto mnode1 = mnodeman.FindByCollateralAddress(pubKeyCollateralAddress);
+    if(mnode1 && mnode1->vin != vin)
+    {
+        errorMessage = strprintf("More than one vin used for single collateral address:vin: %s", vin.ToString());
+        LogPrintf("CActiveMasternode::Register() -  %s\n", errorMessage);
+        return false;
+    }
+
     CMasternodePing mnp(vin);
     if (!mnp.Sign(keyMasternode, pubKeyMasternode)) {
         errorMessage = strprintf("Failed to sign ping, vin: %s", vin.ToString());
@@ -295,8 +303,10 @@ bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secr
 bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secretKey, std::string strTxHash, std::string strOutputIndex)
 {
     // Find possible candidates
-    TRY_LOCK(pwalletMain->cs_wallet, fWallet);
-    if (!fWallet) return false;
+    
+    //move lock into SelectCoinsMasternode to avoid dead lock
+    //TRY_LOCK(pwalletMain->cs_wallet, fWallet);
+    //if (!fWallet) return false;
 
     vector<COutput> possibleCoins = SelectCoinsMasternode();
 
@@ -391,6 +401,10 @@ vector<COutput> CActiveMasternode::SelectCoinsMasternode()
 
     // Temporary unlock MN coins from masternode.conf
     if (GetBoolArg("-mnconflock", true)) {
+
+        TRY_LOCK(pwalletMain->cs_wallet, fWallet);
+		if (!fWallet) return filteredCoins;
+
         uint256 mnTxHash;
         BOOST_FOREACH (CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries()) {
             mnTxHash.SetHex(mne.getTxHash());
@@ -410,6 +424,10 @@ vector<COutput> CActiveMasternode::SelectCoinsMasternode()
 
     // Lock MN coins from masternode.conf back if they where temporary unlocked
     if (!confLockedCoins.empty()) {
+
+        TRY_LOCK(pwalletMain->cs_wallet, fWallet);
+		if (!fWallet) return filteredCoins;
+
         BOOST_FOREACH (COutPoint outpoint, confLockedCoins)
             pwalletMain->LockCoin(outpoint);
     }

@@ -1,0 +1,11 @@
+{
+    "name": "axel-blockchain-enhancement",
+    "version": "0.1.0",
+    "description": "A demo for storing/getting data to/from AXEL blockchain with using OP_RETURN",
+    "author": "Vi+ <vit.yermolenko@axel.org>",
+    "dependencies": {
+        "argv": "0.0.2",
+        "axios": "0.19.2",
+        "url-parse": "1.4.7"
+    }
+}

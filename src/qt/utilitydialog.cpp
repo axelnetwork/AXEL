@@ -35,7 +35,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
     ui->setupUi(this);
     GUIUtil::restoreWindowGeometry("nHelpMessageDialogWindow", this->size(), this);
 
-    QString version = tr("AXEL wallet") + " " + tr("version") + " " + QString::fromStdString(FormatFullVersion());
+    QString version = tr("AXEL Wallet") + " " + tr("version") + " " + QString::fromStdString(FormatFullVersion());
 /* On x86 add a bit specifier to the version so that users can distinguish between
      * 32 and 64 bit builds. On other architectures, 32/64 bit may be more ambigious.
      */
@@ -48,7 +48,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
     ui->graphic->setPixmap(QPixmap(GUIUtil::getThemeImage(":/images/about")));
 
     if (about) {
-        setWindowTitle(tr("About AXEL wallet"));
+        setWindowTitle(tr("About AXEL Wallet"));
 
         /// HTML-format the license message from the core
         QString licenseInfo = QString::fromStdString(LicenseInfo());
@@ -60,8 +60,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
         licenseInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
         // Replace newlines with HTML breaks
         licenseInfoHTML.replace("\n\n", "<br><br>");
-        //licenseInfoHTML.replace("  ", "&nbsp;&nbsp;");
-	licenseInfoHTML.replace("     ", "<span style='color:rgba(0,0,0,0)'>2019 </span>");
+        licenseInfoHTML.replace("  ", "&nbsp;&nbsp;");
+	    //licenseInfoHTML.replace("     ", "<span style='color:rgba(0,0,0,0)'>2019 </span>");
         ui->aboutMessage->setTextFormat(Qt::RichText);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         text = version + "\n" + licenseInfo;
@@ -159,7 +159,7 @@ ShutdownWindow::ShutdownWindow(QWidget* parent, Qt::WindowFlags f) : QWidget(par
 {
     QVBoxLayout* layout = new QVBoxLayout();
     layout->addWidget(new QLabel(
-        tr("AXEL wallet is shutting down...") + "<br /><br />" +
+        tr("AXEL Wallet is shutting down...") + "<br /><br />" +
         tr("Do not shut down the computer until this window disappears.")));
     setLayout(layout);
 }

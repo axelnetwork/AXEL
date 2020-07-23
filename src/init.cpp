@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2018-2019 The AXEL Core developers
+// Copyright (c) 2019-2020 The AXEL Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -123,6 +123,7 @@ CClientUIInterface uiInterface;
 // shutdown thing.
 //
 
+static boost::thread_group threadGroup;
 volatile bool fRequestShutdown = false;
 
 void StartShutdown()
@@ -175,6 +176,7 @@ void PrepareShutdown()
     /// module was initialized.
     RenameThread("axel-shutoff");
     mempool.AddTransactionsUpdated(1);
+    uiInterface.NotifyBlockTip.disconnect(RPCNotifyBlockChange);
     StopRPCThreads();
 #ifdef ENABLE_WALLET
     if (pwalletMain)
@@ -184,6 +186,10 @@ void PrepareShutdown()
     StopNode();
     DumpMasternodes();
     UnregisterNodeSignals(GetNodeSignals());
+
+	// After everything has been shut down,, but before things get flushed, stop the threadGroup
+    threadGroup.interrupt_all();
+    threadGroup.join_all();
 
     if (fFeeEstimatesInitialized) {
         boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
@@ -229,6 +235,7 @@ void PrepareShutdown()
     boost::filesystem::remove(GetPidFile());
 #endif
     UnregisterAllValidationInterfaces();
+    
 }
 
 /**
@@ -520,10 +527,10 @@ std::string LicenseInfo()
            FormatParagraph(_("Copyright (C) 2015-2017 The PIVX Core Developers")) + "\n" +
            "\n" +
            FormatParagraph(_("Copyright (C) 2017-2018 The Bulwark developers")) + "\n" +
+	   "\n" +
+     	   FormatParagraph(_("Copyright (C) 2018-2019 The esbcoin Core developers")) + "\n" +
            "\n" +
-           FormatParagraph(_("Copyright (C) 2018-2019 The esbcoin Core developers")) + "\n" +
-           "\n" +
-	   	   FormatParagraph(_("Copyright (C) 2019-"))+"     " + FormatParagraph(_("The AXEL Core Developers")) + "\n" +
+           FormatParagraph(_("Copyright (C) 2019-2020 The AXEL Wallet Developers")) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +
@@ -635,7 +642,7 @@ bool InitSanityCheck(void)
 /** Initialize axel.
  *  @pre Parameters should be parsed and config file should be read.
  */
-bool AppInit2(boost::thread_group& threadGroup)
+bool AppInit2()
 {
 // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
@@ -918,7 +925,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     // Wait maximum 10 seconds if an old wallet is still running. Avoids lockup during restart
     if (!lock.timed_lock(boost::get_system_time() + boost::posix_time::seconds(10)))
-        return InitError(strprintf(_("Cannot obtain a lock on data directory %s. AXEL is probably already running."), strDataDir));
+        return InitError(strprintf(_("Cannot obtain a lock on data directory %s. AXEL Wallet is probably already running."), strDataDir));
 
 #ifndef WIN32
     CreatePidFile(GetPidFile(), getpid());
@@ -966,6 +973,7 @@ bool AppInit2(boost::thread_group& threadGroup)
      */
     if (fServer) {
         uiInterface.InitMessage.connect(SetRPCWarmupStatus);
+        uiInterface.NotifyBlockTip.connect(RPCNotifyBlockChange);
         StartRPCThreads();
     }
 
@@ -1338,8 +1346,15 @@ bool AppInit2(boost::thread_group& threadGroup)
                 }
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
+		if(!fReindex)
+                {
+                    LOCK(cs_main);
+                    CBlockIndex *tip = chainActive[chainActive.Height()];
+					if(tip)
+                    RPCNotifyBlockChange(tip->GetBlockHash());
+                }
                 if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 4),
-                        GetArg("-checkblocks", 500))) {
+                        GetArg("-checkblocks", 100))) {
                     strLoadError = _("Corrupted block database detected");
                     break;
                 }

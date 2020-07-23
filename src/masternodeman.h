@@ -133,6 +133,7 @@ public:
     CMasternode* Find(const CTxIn& vin);
     CMasternode* Find(const CPubKey& pubKeyMasternode);
     CMasternode* Find(const CService& service);
+    CMasternode* FindByCollateralAddress(const CPubKey& pubKeyCollateralAddress);
 
     /// Find an entry in the masternode list that is next to be paid
     CMasternode* GetNextMasternodeInQueueForPayment(int nBlockHeight, unsigned mnlevel, bool fFilterSigTime, unsigned& nCount);

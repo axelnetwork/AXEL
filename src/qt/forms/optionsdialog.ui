@@ -30,10 +30,10 @@
        <item>
         <widget class="QCheckBox" name="bitcoinAtStartup">
          <property name="toolTip">
-          <string>Automatically start AXEL wallet after logging in to the system.</string>
+          <string>Automatically start AXEL Wallet after logging in to the system.</string>
          </property>
          <property name="text">
-          <string>&amp;Start AXEL wallet on system login</string>
+          <string>&amp;Start AXEL Wallet on system login</string>
          </property>
         </widget>
        </item>
@@ -634,7 +634,7 @@
          <item>
           <widget class="QValueComboBox" name="lang">
            <property name="toolTip">
-            <string>The user interface language can be set here. This setting will take effect after restarting AXEL wallet.</string>
+            <string>The user interface language can be set here. This setting will take effect after restarting AXEL Wallet.</string>
            </property>
           </widget>
          </item>

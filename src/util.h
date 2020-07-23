@@ -201,6 +201,8 @@ std::string HelpMessageOpt(const std::string& option, const std::string& message
 void SetThreadPriority(int nPriority);
 void RenameThread(const char* name);
 
+bool IsSystemWin10();
+
 /**
  * Standard wrapper for do-something-forever thread functions.
  * "Forever" really means until the thread is interrupted.

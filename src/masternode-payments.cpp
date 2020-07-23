@@ -180,15 +180,6 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
         ExtractDestination(winner.payee, address1);
         CBitcoinAddress payee_addr(address1);
 
-        auto winner_mn = mnodeman.Find(winner.payee);
-
-        if (!winner_mn) {
-            LogPrintf("mnw - unknown payee %s\n", payee_addr.ToString().c_str());
-            return;
-        }
-
-        winner.payeeLevel = winner_mn->Level();
-
         if (masternodePayments.mapMasternodePayeeVotes.count(winner.GetHash())) {
             LogPrint("mnpayments", "mnw - Already seen - %s bestHeight %d\n", winner.GetHash().ToString().c_str(), nHeight);
             masternodeSync.AddedMasternodeWinner(winner.GetHash());
@@ -200,6 +191,15 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
             if(strError != "") LogPrintf("mnw - invalid message - %s\n", strError);
             return;
         }
+
+        auto winner_mn = mnodeman.Find(winner.payee);
+
+        if (!winner_mn) {
+            LogPrintf("mnw - unknown payee %s\n", payee_addr.ToString().c_str());
+            return;
+        }
+
+        winner.payeeLevel = winner_mn->Level();
 
         int nFirstBlock = nHeight - int(mnodeman.CountEnabled(winner.payeeLevel) * 1.25); // / 100 * 125;
         if (winner.nBlockHeight < nFirstBlock || winner.nBlockHeight > nHeight + 20) {
@@ -380,7 +380,7 @@ bool CMasternodeBlockPayees::IsTransactionValid(const CTransaction& txNew)
                 if(out.nValue >= requiredMasternodePayment)
                     found = true;
                 else
-                    LogPrintf("masternode","Masternode payment is out of drift range. Paid=%s Min=%s\n", FormatMoney(out.nValue).c_str(), FormatMoney(requiredMasternodePayment).c_str());
+                    LogPrint("mnpayments","Masternode payment is out of drift range. Paid=%s Min=%s\n", FormatMoney(out.nValue).c_str(), FormatMoney(requiredMasternodePayment).c_str());
             }
         }
 

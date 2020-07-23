@@ -492,6 +492,30 @@
     QCheckBox:hover {
         background-color:transparent;
     }
+    
+    QCheckBox::indicator:unchecked {
+        image: url(':/images_dark/checkbox_unchecked');
+    }
+
+    QCheckBox::indicator:unchecked:hover {
+        image: url(':/images_dark/checkbox_unchecked_hover');
+    }
+
+    QCheckBox::indicator:unchecked:pressed {
+        image: url(':/images_dark/checkbox_unchecked_pressed');
+    }
+
+    QCheckBox::indicator:checked {
+        image: url(':/images_dark/checkbox_checked');
+    }
+
+    QCheckBox::indicator:checked:hover {
+        image: url(':/images_dark/checkbox_checked_hover');
+    }
+
+    QCheckBox::indicator:checked:pressed {
+        image: url(':/images_dark/checkbox_checked_pressed');
+    }
 
     /* Global LineEdit style */
     .QValidatedLineEdit, .QLineEdit { /* Text Entry Fields */
@@ -650,7 +674,13 @@
     }
 
     QToolBar#left_ToolBar > QToolButton:checked {
-        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #000000, stop:0.2 #9013FE, stop:0.8 #9013FE, stop:1 #000000);
+		border-bottom-style: solid;
+        border-top-style: solid;
+        border-bottom-width: 3px;
+        border-top-width: 3px;
+        border-top-color: black;
+		border-bottom-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #000000, stop:0.2 #9013FE, stop:0.8 #9013FE, stop:1 #000000);
+        /*background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #000000, stop:0.2 #9013FE, stop:0.8 #9013FE, stop:1 #000000);*/
     }
 
     QToolBar#left_ToolBar > QToolButton:hover:!checked {
@@ -1606,6 +1636,10 @@
         background-color:transparent;
         padding-left:10px;
         padding-right:10px;
+    }
+
+	QWidget#ToolsPage .QGroupBox#groupBox[title='Totals'] { /* Network totals */
+		color: white;
     }
 
     QWidget#ToolsPage .QGroupBox #line { /* Network In Line */

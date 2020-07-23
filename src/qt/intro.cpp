@@ -111,6 +111,13 @@ Intro::Intro(QWidget* parent) : QDialog(parent, Qt::WindowSystemMenuHint | Qt::W
 {
     ui->setupUi(this);
     ui->sizeWarningLabel->setText(ui->sizeWarningLabel->text().arg(BLOCK_CHAIN_SIZE / GB_BYTES));
+    if(IsSystemWin10())
+    {
+	//if os is win10,hide the datadir custom selection
+	ui->dataDirCustom->hide();	
+	ui->ellipsisButton->hide();
+    }
+	
     startThread();
 }
 
@@ -171,14 +178,14 @@ bool Intro::pickDataDirectory()
                 return false;
             }
             dataDir = intro.getDataDirectory();
-            try {
+            try {		
                 TryCreateDirectory(GUIUtil::qstringToBoostPath(dataDir));
                 break;
             } catch (fs::filesystem_error& e) {
                 QMessageBox::critical(0, tr("AXEL"),
                     tr("Error: Specified data directory \"%1\" cannot be created.").arg(dataDir));
                 /* fall through, back to choosing screen */
-            }
+            }	    
         }
 
         settings.setValue("strDataDir", dataDir);

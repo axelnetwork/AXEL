@@ -388,6 +388,47 @@ public:
         }
     }
 
+    int get_mruset_inv_count(mruset<CInv> &mru, const CInv &inv){
+        set<CInv>::iterator it;
+        if(mru.count(inv)){
+            it = mru.find(inv);
+            if(it != mru.end()){
+                return (*it).counts;
+            }
+        }
+        else{
+            return 0;
+        }
+    }
+
+    bool is_mruset_inv_can_be_sent(mruset<CInv> &mru, const CInv &inv){
+
+        int iCount = get_mruset_inv_count(mru, inv);
+        if (iCount >= 3){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+    //return: true: we can send it,  false: we can't send it
+    bool try_insert_mruset_inv(mruset<CInv> &mru, const CInv &inv)
+    {
+        int iCount = get_mruset_inv_count(mru, inv);
+        if (iCount >= 3){
+            return false;
+        }
+        else{
+            std::pair<set<CInv>::iterator, bool> ret;
+            ret =  mru.insert(inv);
+
+            if (iCount > 0)
+                (*(ret.first)).counts++;
+
+            return true;
+        }
+    }
 
     void AddInventoryKnown(const CInv& inv)
     {
@@ -401,7 +442,7 @@ public:
     {
         {
             LOCK(cs_inventory);
-            if (!setInventoryKnown.count(inv))
+            if (is_mruset_inv_can_be_sent(setInventoryKnown, inv))
                 vInventoryToSend.push_back(inv);
         }
     }

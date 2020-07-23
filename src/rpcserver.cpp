@@ -310,6 +310,7 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
         /* Coin generation */
         {"generating", "getgenerate", &getgenerate, true, false, false},
+        {"generating", "generate", &generate, true, false, false},
         {"generating", "gethashespersec", &gethashespersec, true, false, false},
         {"generating", "setgenerate", &setgenerate, true, true, false},
 #endif
@@ -333,6 +334,9 @@ static const CRPCCommand vRPCCommands[] =
         {"hidden", "invalidateblock", &invalidateblock, true, true, false},
         {"hidden", "reconsiderblock", &reconsiderblock, true, true, false},
         {"hidden", "setmocktime", &setmocktime, true, false, false},
+        {"hidden", "waitfornewblock", &waitfornewblock, true, true, false},
+        {"hidden", "waitforblock", &waitforblock, true, true, false},
+        {"hidden", "waitforblockheight", &waitforblockheight, true, true, false},
 
         /* axel features */
         {"axel", "masternode", &masternode, true, true, false},

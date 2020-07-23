@@ -186,6 +186,8 @@ void UnregisterAllValidationInterfaces();
 /** Push an updated transaction to all registered wallets */
 void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL);
 
+void UpdateTipWithWallets(CBlockIndex *pindex);
+
 /** Register with a network node to receive its signals */
 void RegisterNodeSignals(CNodeSignals& nodeSignals);
 /** Unregister a network node */

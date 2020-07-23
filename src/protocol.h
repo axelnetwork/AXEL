@@ -150,6 +150,7 @@ public:
 public:
     int type;
     uint256 hash;
+    mutable int counts;
 };
 
 enum {

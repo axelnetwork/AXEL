@@ -17,7 +17,7 @@ BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
             VALUE "CompanyName",        "AXEL"
-            VALUE "FileDescription",    "axel-cli (OSS RPC client for AXEL)"
+            VALUE "FileDescription",    "axel-cli (OSS RPC client for AXEL Wallet)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "axel-cli"
             VALUE "LegalCopyright",     COPYRIGHT_STR
