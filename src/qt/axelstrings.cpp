@@ -150,6 +150,8 @@ QT_TRANSLATE_NOOP("axel-core", ""
 "the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software "
 "written by Eric Young and UPnP software written by Thomas Bernard."),
 QT_TRANSLATE_NOOP("axel-core", ""
+"Terms & Policies:<https://www.axel.org/terms-and-policies/>"),
+QT_TRANSLATE_NOOP("axel-core", ""
 "To use axeld, or the -server option to axel-qt, you must set an rpcpassword "
 "in the configuration file:\n"
 "%s\n"

@@ -69,10 +69,10 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet) : QDialog(paren
     ui->proxyIp->installEventFilter(this);
 
 /* Window elements init */
-#ifdef Q_OS_MAC
-    /* remove Window tab on Mac */
+//#ifdef Q_OS_MAC
+    /* remove Window tab*/
     ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabWindow));
-#endif
+//#endif
 
     /* remove Wallet tab in case of -disablewallet */
     if (!enableWallet) {

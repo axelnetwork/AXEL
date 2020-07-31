@@ -69,8 +69,8 @@ public:
     void setDisplayUnit(const QVariant& value);
 
     /* Explicit getters */
-    bool getMinimizeToTray() { return fMinimizeToTray; }
-    bool getMinimizeOnClose() { return fMinimizeOnClose; }
+    bool getMinimizeToTray() { return false;/*fMinimizeToTray;*/ }
+    bool getMinimizeOnClose() { return false;/*fMinimizeOnClose;*/ }
     int getDisplayUnit() { return nDisplayUnit; }
     QString getThirdPartyTxUrls() { return strThirdPartyTxUrls; }
     bool getProxySettings(QNetworkProxy& proxy) const;

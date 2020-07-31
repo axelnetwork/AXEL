@@ -143,6 +143,7 @@ Section -un.post UNSEC0001
     DeleteRegKey /IfEmpty HKCU "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKCU "${REGKEY}"
     DeleteRegKey HKCR "@PACKAGE_TARNAME@"
+    DeleteRegValue HKCU "Software\AXEL\axel-qt" "fTosAccept"
     RmDir /REBOOTOK $SMPROGRAMS\$StartMenuGroup
     RmDir /REBOOTOK $INSTDIR
     Push $R0
