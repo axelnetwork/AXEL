@@ -84,7 +84,7 @@ int64_t nReserveBalance = 0;
  */
 CFeeRate minRelayTxFee = CFeeRate(10000);
 
-CTxMemPool mempool(::minRelayTxFee);
+CTxMemPool mempool(SelectMinRelayTxFee());
 
 struct COrphanTx {
     CTransaction tx;
@@ -835,7 +835,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;
-        } else if (txout.IsDust(::minRelayTxFee)) {
+        } else if (txout.IsDust(SelectMinRelayTxFee())) {
             reason = "dust";
             return false;
         }
@@ -1133,6 +1133,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState& state)
 
 bool CheckTxFilter(const CTransaction& tx)
 {
+    if (Params().NetworkID() == CBaseChainParams::REGTEST)
+        return true;
     bool acceptTx = true;
     CTxDestination Dest;
     CBitcoinAddress Address;
@@ -1199,7 +1201,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
             return 0;
     }
 
-    CAmount nMinFee = ::minRelayTxFee.GetFee(nBytes);
+    CAmount nMinFee = SelectMinRelayTxFee().GetFee(nBytes);
 
     if (fAllowFree) {
         // There is a free transaction area in blocks created by most miners,
@@ -1348,14 +1350,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
                     REJECT_INSUFFICIENTFEE, "insufficient fee");
 
             // Require that free transactions have sufficient priority to be mined in the next block.
-            if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+            if (GetBoolArg("-relaypriority", true) && nFees < SelectMinRelayTxFee().GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
                 return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
             }
 
             // Continuously rate-limit free (really, very-low-fee) transactions
             // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
             // be annoying or make others' transactions take longer to confirm.
-            if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize)) {
+            if (fLimitFree && nFees < SelectMinRelayTxFee().GetFee(nSize)) {
                 static CCriticalSection csFreeLimiter;
                 static double dFreeCount;
                 static int64_t nLastTime;
@@ -1376,10 +1378,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransa
             }
         }
 
-        if (fRejectInsaneFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
+        if (fRejectInsaneFee && nFees > SelectMinRelayTxFee().GetFee(nSize) * 10000)
             return error("AcceptToMemoryPool: : insane fees %s, %d > %d",
                 hash.ToString(),
-                nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+                nFees, SelectMinRelayTxFee().GetFee(nSize) * 10000);
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -1537,14 +1539,14 @@ bool AcceptableInputs(CTxMemPool& pool, CValidationState& state, const CTransact
                     REJECT_INSUFFICIENTFEE, "insufficient fee");
 
             // Require that free transactions have sufficient priority to be mined in the next block.
-            if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+            if (GetBoolArg("-relaypriority", true) && nFees < SelectMinRelayTxFee().GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
                 return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
             }
 
             // Continuously rate-limit free (really, very-low-fee) transactions
             // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
             // be annoying or make others' transactions take longer to confirm.
-            if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize)) {
+            if (fLimitFree && nFees < SelectMinRelayTxFee().GetFee(nSize)) {
                 static CCriticalSection csFreeLimiter;
                 static double dFreeCount;
                 static int64_t nLastTime;
@@ -1565,10 +1567,10 @@ bool AcceptableInputs(CTxMemPool& pool, CValidationState& state, const CTransact
             }
         }
 
-        if (fRejectInsaneFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
+        if (fRejectInsaneFee && nFees > SelectMinRelayTxFee().GetFee(nSize) * 10000)
             return error("AcceptableInputs: : insane fees %s, %d > %d",
                 hash.ToString(),
-                nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+                nFees, SelectMinRelayTxFee().GetFee(nSize) * 10000);
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -1756,11 +1758,8 @@ CAmount GetBlockValue(int nHeight)
     if (nHeight < 500) {    // premine
         nSubsidy = 1500000 * COIN;
     }
-    else if (nHeight >= 500 && nHeight < 612600) {
-        nSubsidy = 15 * COIN;
-    }
     else {
-        nSubsidy = 61 * COIN;
+        nSubsidy = 15 * COIN;
     }
 
 
@@ -1776,22 +1775,67 @@ CAmount GetBlockValue(int nHeight)
     return nSubsidy;
 }
 
+int64_t GetMasternodeCollateral(unsigned mnlevel)
+{
+    switch (mnlevel)
+    {
+        case 1:
+            return 1000000;
+        case 2:
+            return 50000;
+        case 3:
+            return 5000;
+    }
+
+    return 0;
+}
+
+double GetMasternodeRewardProportion(unsigned mnlevel)
+{
+    switch (mnlevel)
+    {
+        case 1:
+            return 0.08;
+        case 2:
+            return 0.59;
+        case 3:
+            return 0.13;
+        default:
+            return 0.0;
+    }
+}
+
+double GetMasternodeBlockFeeProportion(unsigned mnlevel)
+{
+    switch (mnlevel)
+    {
+        case 1:
+            return 0.08;
+        case 2:
+            return 0.59;
+        case 3:
+            return 0.13;
+        default:
+            return 0.0;
+    }
+}
+
+int64_t GetMasternodeFee(int nHeight, unsigned mnlevel, int64_t blockFee)
+{
+    if (nHeight <= Params().StartMNPaymentsBlock())
+        return 0;
+
+    return blockFee * GetMasternodeBlockFeeProportion(mnlevel);
+}
+
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue)
 {
     if (nHeight <= Params().StartMNPaymentsBlock())
         return 0;
 
-	switch (mnlevel)
-	{
-        case 1:
-            return blockValue * AXEL_D_MN_REWARDS_TIER1;
-        case 2:
-            return blockValue * AXEL_D_MN_REWARDS_TIER2;
-        case 3:
-            return blockValue * AXEL_D_MN_REWARDS_TIER3;
-	}
-    return 0;
+    return blockValue * GetMasternodeRewardProportion(mnlevel);
 }
+
 
 bool IsInitialBlockDownload()
 {
@@ -2629,6 +2673,17 @@ bool static ConnectTip(CValidationState& state, CBlockIndex* pindexNew, CBlock* 
     nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    return true;
+}
+
+CFeeRate SelectMinRelayTxFee()
+{
+    return minRelayTxFee;
+}
+
+bool SetMinRelayTxFee(CFeeRate rate)
+{
+    minRelayTxFee = rate;
     return true;
 }
 
@@ -5124,7 +5179,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         mapAlreadyAskedFor.erase(inv);
 
-        if (!txFilterState) {
+        if (!txFilterState && Params().NetworkID() != CBaseChainParams::REGTEST) {
             LogPrintf("Transaction not accepted because txFilter not initialized. tx=%s\n", tx.GetHash().ToString());
             return true;
         }

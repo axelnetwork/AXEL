@@ -29,6 +29,7 @@ JSONDecodeError = getattr(json, "JSONDecodeError", ValueError)
 
 BITCOIND_PROC_WAIT_TIMEOUT = 600
 
+
 class TestNode():
     """A class for representing a axeld node under test.
 
@@ -60,7 +61,16 @@ class TestNode():
         self.coverage_dir = coverage_dir
         # Most callers will just need to add extra args to the standard list below. For those callers that need more flexibity, they can just set the args property directly.
         self.extra_args = extra_args
-        self.args = [self.binary, "-datadir=" + self.datadir, "-server", "-keypool=1", "-discover=0", "-rest", "-logtimemicros", "-debug", "-debugexclude=libevent", "-debugexclude=leveldb", "-mocktime=" + str(mocktime), "-uacomment=testnode%d" % i]
+        self.args = [
+            self.binary,
+            "-datadir=" + self.datadir,
+            "-rest",
+            "-debug",
+            "-debugexclude=libevent",
+            "-debugexclude=leveldb",
+            "-mocktime=" + str(mocktime),
+            # DELETED for AXEL
+        ]
 
         self.cli = TestNodeCLI(os.getenv("BITCOINCLI", "axel-cli"), self.datadir)
         self.use_cli = use_cli
@@ -217,7 +227,9 @@ class TestNode():
             p.peer_disconnect()
         del self.p2ps[:]
 
+
 class TestNodeCLIAttr:
+
     def __init__(self, cli, command):
         self.cli = cli
         self.command = command
@@ -227,6 +239,7 @@ class TestNodeCLIAttr:
 
     def get_request(self, *args, **kwargs):
         return lambda: self(*args, **kwargs)
+
 
 class TestNodeCLI():
     """Interface to axel-cli for an individual node"""

@@ -249,9 +249,15 @@ bool GetTransaction(const uint256& hash, CTransaction& tx, uint256& hashBlock, b
 
 bool DisconnectBlocksAndReprocess(int blocks);
 
+int64_t GetMasternodeCollateral(unsigned mnlevel);
+double GetMasternodeRewardProportion(unsigned mnlevel);
+double GetMasternodeBlockFeeProportion(unsigned mnlevel);
+int64_t GetMasternodeFee(int nHeight, unsigned mnlevel, int64_t blockFee);
+
 // ***TODO***
 double ConvertBitsToDouble(unsigned int nBits);
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue);
+
 
 bool ActivateBestChain(CValidationState& state, CBlock* pblock = NULL, bool fAlreadyChecked = false);
 CAmount GetBlockValue(int nHeight);
@@ -471,6 +477,10 @@ bool TestBlockValidity(CValidationState& state, const CBlock& block, CBlockIndex
 /** Store block on disk. If dbp is provided, the file is known to already reside on disk */
 bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** pindex, CDiskBlockPos* dbp = NULL, bool fAlreadyCheckedBlock = false);
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex = NULL);
+
+/** Min relay transaction fee */
+CFeeRate SelectMinRelayTxFee();
+bool SetMinRelayTxFee(CFeeRate rate);
 
 /** Get the sum of the tx input */
 bool GetTxValueIn(const CTransaction& tx, CAmount &nAmount);

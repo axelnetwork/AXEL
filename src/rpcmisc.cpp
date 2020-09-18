@@ -106,7 +106,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
         obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
     obj.push_back(Pair("paytxfee", ValueFromAmount(payTxFee.GetFeePerK())));
 #endif
-    obj.push_back(Pair("relayfee", ValueFromAmount(::minRelayTxFee.GetFeePerK())));
+    obj.push_back(Pair("relayfee", ValueFromAmount(SelectMinRelayTxFee().GetFeePerK())));
     bool nStaking = false;
     if (mapHashedBlocks.count(chainActive.Tip()->nHeight))
         nStaking = true;
@@ -231,16 +231,14 @@ UniValue spork(const UniValue& params, bool fHelp)
 {
     if (params.size() == 1 && params[0].get_str() == "show") {
         UniValue ret(UniValue::VOBJ);
-        for (int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++) {
-            if (sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), GetSporkValue(nSporkID)));
+        for (const CSporkDef& sporkDef : sporkDefs) {
+            ret.push_back(Pair(sporkDef.name, GetSporkValue(sporkDef.sporkId)));
         }
         return ret;
     } else if (params.size() == 1 && params[0].get_str() == "active") {
         UniValue ret(UniValue::VOBJ);
-        for (int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++) {
-            if (sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), IsSporkActive(nSporkID)));
+        for (const CSporkDef& sporkDef : sporkDefs) {
+            ret.push_back(Pair(sporkDef.name, IsSporkActive(sporkDef.sporkId)));
         }
         return ret;
     } else if (params.size() == 2) {

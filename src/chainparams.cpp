@@ -67,12 +67,14 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
         (374388, uint256("fd3b057e938788a9c84bd95c6a474ab06cddc0209f7a331998005c67f5e1fa57"))
         (424111, uint256("06c8deb7c17e2440612141b7e844eaed1eb3decad47382aa16e23f1c0ad99928"))
         (531645, uint256("0226c3a2523774be53a1bceef48e5c13b1bdd7081faff97a5e8793b96fbfe735"))
+        (560123, uint256("8dfcea9334c53363150a987e7edb251fa5ef22fe9496626e0c598dc09db7dec5"))
+        (592871, uint256("c657dedd3a1685d730ce1a15e591db79a798221ec02d70bf2c8fc0086cc2fc1d"))
     ;
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1595314885,
-    1258435,
+    1599031526,    // www.epochconverter.com
+    1393215,
     2000
     // 1549526525, // * UNIX timestamp of last checkpoint block
     // 0,          // * total number of transactions between genesis and last checkpoint
@@ -245,7 +247,7 @@ public:
         fRequireRPCPassword = true;
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
-        fRequireStandard = false;
+        fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
 
@@ -253,7 +255,7 @@ public:
 
         vAlertPubKey = ParseHex("04fed4284f0e493cb41b389b9d262066c05edd5f524b64ea2ee6d7b8aa0658f67ff98df15895e0cae5702ab31712da0453f50e931dc1c1bc5d1eba88d09d20b5b3");
         vGMPubKey = ParseHex("0414b78fd29848ca55bacabe49c6bf53c8cb5224cdd84590f21616457c564b01d2c26c69fea8a55b5e336cb40981ba3167b04ddd149a21f59ab07cf30a4b7285b1");
-        strSporkKey = "04d549d4d839d8c404e18f3b4c5722c471bde4df76c77a48d52ddfa07fe6d07a753d5ddba68fc6addcfda2779b3ded5d18be69fefba8c58610f1d7eb2a2ad6a3a2";
+        strSporkKey = "04f37f823b3e722f30b1f83ee41f2feba43ebee9576f04c0baadee2275b5a308bbe6947c2c7ff0d44e274a03e502985e50bd2ce9b19e781ac66ef4202758b8c498";
         strObfuscationPoolDummyAddress = "ANYmoiCwjMaEtrBu5RefFqpDrK64hMKsSp";
 
     }
@@ -305,6 +307,7 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
         fTestnetToBeDeprecatedFieldRPC = false;
+        nLastPOWBlock = 250;
     }
     const Checkpoints::CCheckpointData& Checkpoints() const
     {

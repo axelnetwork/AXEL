@@ -19,8 +19,7 @@ Join to our group at [Discord](https://discordapp.com/channels/40769957338179175
 <tr><td>Staking age</td><td>4 hours</td></tr>
 <tr><td></td><td></td></tr>
 <tr><td>Block rewards</td><td></td></tr>
-<tr><td>501-612600</td><td>15</td></tr>
-<tr><td>612601-...</td><td>61</td></tr>
+<tr><td>501-...</td><td>15</td></tr>
 <tr><td></td><td></td></tr>
 <tr><td>Total supply</td><td>1000,000,000</td></tr>
 <tr><td></td><td></td></tr>

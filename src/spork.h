@@ -22,41 +22,44 @@
 using namespace std;
 using namespace boost;
 
-/*
-    Don't ever reuse these IDs for other sporks
-    - This would result in old clients getting confused about which spork is for what
-*/
-#define SPORK_START 10001
-#define SPORK_END 10010
+#define NEW_SPORK_ID(id, value) CSporkDef(id, value, #id)
+typedef enum _EsporkID{
 
-#define SPORK_1_SWIFTTX 10001
-#define SPORK_2_SWIFTTX_BLOCK_FILTERING 10002
-#define SPORK_3_MAX_VALUE 10003
-#define SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT 10004
-#define SPORK_5_RECONSIDER_BLOCKS 10005
-#define SPORK_6_MN_WINNER_MINIMUM_AGE 10006
-#define SPORK_7_MN_REBROADCAST_ENFORCEMENT 10007
-#define SPORK_8_NEW_PROTOCOL_ENFORCEMENT 10008
-#define SPORK_9_TX_FILTERING_ENFORCEMENT 10009
-#define SPORK_10_NEW_PROTOCOL_ENFORCEMENT_2 10010
+    SPORK_1_SWIFTTX                         = 10001,
+    SPORK_2_SWIFTTX_BLOCK_FILTERING         = 10002,
+    SPORK_3_MAX_VALUE                       = 10003,
+    SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT  = 10004,
+    SPORK_5_RECONSIDER_BLOCKS               = 10005,
+    SPORK_6_MN_WINNER_MINIMUM_AGE           = 10006,
+    SPORK_7_MN_REBROADCAST_ENFORCEMENT      = 10007,
+    SPORK_8_NEW_PROTOCOL_ENFORCEMENT        = 10008,
+    SPORK_9_TX_FILTERING_ENFORCEMENT        = 10009,
+    SPORK_10_NEW_PROTOCOL_ENFORCEMENT_2     = 10010,
 
-#define SPORK_1_SWIFTTX_DEFAULT 978307200                         //2001-1-1
-#define SPORK_2_SWIFTTX_BLOCK_FILTERING_DEFAULT 1424217600        //2015-2-18
-#define SPORK_3_MAX_VALUE_DEFAULT 1000
-#define SPORK_4_MASTERNODE_PAYMENT_ENFORCEMENT_DEFAULT 1541505600 // 11/06/2018 @ 12:00pm (UTC)
-#define SPORK_5_RECONSIDER_BLOCKS_DEFAULT 0
-#define SPORK_6_MN_WINNER_MINIMUM_AGE_DEFAULT 8000                // Age in seconds. This should be > MASTERNODE_REMOVAL_SECONDS to avoid
-                                                                  // misconfigured new nodes in the list.
-                                                                  // Set this to zero to emulate classic behaviour
-#define SPORK_7_MN_REBROADCAST_ENFORCEMENT_DEFAULT 4102444800     // off
-#define SPORK_8_NEW_PROTOCOL_ENFORCEMENT_DEFAULT 1545674400       // 24/12/2018 @ 18:00 (UTC)
-#define SPORK_9_TX_FILTERING_ENFORCEMENT_DEFAULT 0                // off
-#define SPORK_10_NEW_PROTOCOL_ENFORCEMENT_2_DEFAULT 4102444800    // off
+    SPORK_11_OP_MN_REWARD_2020              = 10011,
+    SPORK_12_OP_BLOCK_REWARD_2020           = 10012,
+    SPORK_13_MIN_TX_FEE_2020                = 10013,
+
+    SPORK_14_BLOCK_SIZE_3_M                 = 10014,
+
+    SPORK_INVALID                           = -1
+}SporkId;
+
+// Default values
+struct CSporkDef
+{
+    CSporkDef(): sporkId(SPORK_INVALID), defaultValue(0) {}
+    CSporkDef(SporkId id, int64_t val, std::string n): sporkId(id), defaultValue(val), name(n) {}
+    SporkId sporkId;
+    int64_t defaultValue;
+    std::string name;
+};
 
 class CSporkMessage;
 class CSporkManager;
 
 extern CSporkManager sporkManager;
+extern std::vector<CSporkDef> sporkDefs;
 extern std::map<uint256, CSporkMessage> mapSporks;
 extern std::map<int, CSporkMessage> mapSporksActive;
 extern std::set<CBitcoinAddress> setFilterAddress;

@@ -252,9 +252,9 @@ void MasternodeList::updateMyMasternodeInfo(QString strAlias, QString strAddr, C
 
         switch (pmn->Level())
         {
-            case 1: mnLevelText = "Tier 1"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case 1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
             case 2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
-            case 3: mnLevelText = "Tier 3"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
+            case 3: mnLevelText = "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
         }
     }
 
@@ -352,10 +352,10 @@ void MasternodeList::updateNodeList()
     {
         // populate list
         // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
-        QTableWidgetItem *addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
 
         double tLuck = 0;
         CAmount masternodeCoins = 0;
+        int64_t activeSeconds = mn.lastPing.sigTime - mn.sigTime;
         std::string pubkey = CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString();
         auto it = masternodeRewards.find(pubkey);
         if (it != masternodeRewards.end())
@@ -363,18 +363,30 @@ void MasternodeList::updateNodeList()
 
         switch (mn.Level())
         {
-            case 1: mnLevelText = "Tier 1"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case 1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
             case 2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
-            case 3: mnLevelText = "Tier 3"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
+            case 3: mnLevelText = "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
         }
 
+        if (strCurrentFilter != "")
+        {
+            strToFilter = QString::fromStdString(mnLevelText) + " " +
+                          QString::number(mn.protocolVersion) + " " +
+                          QString::fromStdString(mn.Status()) + " " +
+                          QString::fromStdString(DurationToDHMS(activeSeconds)) + " " +
+                          QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime + offsetFromUtc)) + " " +
+                          QString::fromStdString(pubkey);
+            if (!strToFilter.contains(strCurrentFilter)) continue;
+        }
+
+        QTableWidgetItem *addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
         QTableWidgetItem *levelItem = new QTableWidgetItem(QString::fromStdString(mnLevelText));
 //        QTableWidgetItem *levelItem = new QTableWidgetItem(QString::number(mn.Level()));
 
         QTableWidgetItem *protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
         //protocolItem->setTextAlignment(Qt::AlignHCenter);
         QTableWidgetItem *statusItem = new QTableWidgetItem(QString::fromStdString(mn.Status()));
-        int64_t activeSeconds = mn.lastPing.sigTime - mn.sigTime;
+
         QTableWidgetItem *activeSecondsItem = new QTableWidgetItem(QString::fromStdString(DurationToDHMS(activeSeconds)));
         QTableWidgetItem *lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime + offsetFromUtc)));
         QTableWidgetItem *pubkeyItem = new QTableWidgetItem(QString::fromStdString(pubkey));
@@ -382,17 +394,6 @@ void MasternodeList::updateNodeList()
         //mnReward->setTextAlignment(Qt::AlignRight);
         QTableWidgetItem *mnLuck = new QTableWidgetItem(activeSeconds > 30*60*60 ? QString::number(tLuck,'f',1).append("%") : QString::fromStdString("-"));
         //mnLuck->setTextAlignment(Qt::AlignHCenter);
-
-        if (strCurrentFilter != "")
-        {
-            strToFilter =   addressItem->text() + " " +
-                            protocolItem->text() + " " +
-                            statusItem->text() + " " +
-                            activeSecondsItem->text() + " " +
-                            lastSeenItem->text() + " " +
-                            pubkeyItem->text();
-            if (!strToFilter.contains(strCurrentFilter)) continue;
-        }
 
         ui->tableWidgetMasternodes->insertRow(0);
         ui->tableWidgetMasternodes->setItem(0, 0, addressItem);

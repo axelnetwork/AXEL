@@ -66,6 +66,10 @@ bool AppInit(int argc, char* argv[])
     if (mapArgs.count("-?") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("AXEL Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n";
 
+        #ifdef ENABLE_WEBWALLET
+            strUsage += "[web wallet is enabled]\n";
+        #endif
+
         if (mapArgs.count("-version")) {
             strUsage += LicenseInfo();
         } else {

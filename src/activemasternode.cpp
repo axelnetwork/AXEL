@@ -353,10 +353,10 @@ bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secr
 
         for(auto& out : possibleCoins) {
 
-            if(selected_level == 3u)
+            if(selected_level == 1u)
                 break;
 
-            if(CMasternode::Level(out.tx->vout[out.i].nValue, chainActive.Height()) > selected_level)
+            if(CMasternode::Level(out.tx->vout[out.i].nValue, chainActive.Height()) < selected_level)
                 selectedOutput = &out;
         }
     }

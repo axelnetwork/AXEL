@@ -1081,8 +1081,10 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
     else if (strCommand == "mnget") { //Get winnign Masternode list
 
-        int nCountNeeded;
-        vRecv >> nCountNeeded;
+        //disable it,because masternodePayments.ProcessMessageMasternodePayments do the same thing
+        //if not disable it,will cause exectiopn in ProcessMessageMasternodePayments
+        //int nCountNeeded;
+        //vRecv >> nCountNeeded;
 
         bool isLocal = (pfrom->addr.IsRFC1918() || pfrom->addr.IsLocal());
 
@@ -1105,8 +1107,8 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             mAskedUsForWinnerMasternodeList[pfrom->addr] = askAgain;
         }
 
-        masternodePayments.Sync(pfrom, nCountNeeded);
-        LogPrint("mnpayments", "mnget - Sent Masternode winners to peer %i\n", pfrom->GetId());
+        //masternodePayments.Sync(pfrom, nCountNeeded);
+        //LogPrint("mnpayments", "mnget - Sent Masternode winners to peer %i\n", pfrom->GetId());
     }
 
 }

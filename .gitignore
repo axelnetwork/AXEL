@@ -120,6 +120,7 @@ qa/pull-tester/test.*/*
 qa/tmp
 cache/
 share/BitcoindComparisonTool.jar
+config.ini
 
 !src/leveldb*/Makefile
 !depends/Makefile
@@ -151,3 +152,6 @@ contrib/devtools/split-debug.sh
 
 # Qt creator
 *.pro.user
+
+# Custom
+/.pydevproject

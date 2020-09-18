@@ -51,9 +51,9 @@ MESSAGEMAP = {
 }
 
 MAGIC_BYTES = {
-    "mainnet": b"\x23\x32\x25\x52",   # mainnet
-    "testnet3": b"\xd9\x79\x68\xbd",  # testnet3
-    "regtest": b"\xf8\xcf\x7e\xaf",   # regtest
+    "mainnet": b"\x90\xc4\xfd\xe9",   # mainnet
+    "testnet3": b"\x45\x76\x65\xba",  # testnet3
+    "regtest": b"\xa1\xcf\x7e\xac",   # regtest
 }
 
 class P2PConnection(asyncore.dispatcher):
@@ -87,7 +87,7 @@ class P2PConnection(asyncore.dispatcher):
         self.network = net
         self.disconnect = False
 
-        logger.info('Connecting to Bitcoin Node: %s:%d' % (self.dstaddr, self.dstport))
+        logger.info('Connecting to PIVX Node: %s:%d' % (self.dstaddr, self.dstport))
 
         try:
             self.connect((dstaddr, dstport))

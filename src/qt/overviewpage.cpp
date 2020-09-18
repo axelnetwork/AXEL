@@ -357,18 +357,23 @@ void OverviewPage::updateMasternodeInfo()
     ui->graphMN1->setMaximum(totalmn);
     ui->graphMN2->setMaximum(totalmn);
     ui->graphMN3->setMaximum(totalmn);
-    ui->graphMN1->setValue(mn3);
+    ui->graphMN1->setValue(mn1);
     ui->graphMN2->setValue(mn2);
-    ui->graphMN3->setValue(mn1);
+    ui->graphMN3->setValue(mn3);
+
+    ui->tier_1->setText("Tier 1 :");
+    ui->tier_2->setText("Tier 2 :");
+    ui->tier_3->setText("Tier 3 :");
+
 
     // TODO: need a read actual 24h blockcount from chain
     int BlockCount24h = block24hCount > 0 ? block24hCount : 1440;
 
     // update ROI
     double BlockReward = GetBlockValue(CurrentBlock);
-    (mn3==0) ? roi1 = 0 : roi1 = (AXEL_D_MN_REWARDS_TIER3*BlockReward*BlockCount24h)/mn3/COIN;
-    (mn2==0) ? roi2 = 0 : roi2 = (AXEL_D_MN_REWARDS_TIER2*BlockReward*BlockCount24h)/mn2/COIN;
-    (mn1==0) ? roi3 = 0 : roi3 = (AXEL_D_MN_REWARDS_TIER1*BlockReward*BlockCount24h)/mn1/COIN;
+    (mn3==0) ? roi3 = 0 : roi3 = (GetMasternodeRewardProportion(3)*BlockReward*BlockCount24h)/mn3/COIN;
+    (mn2==0) ? roi2 = 0 : roi2 = (GetMasternodeRewardProportion(2)*BlockReward*BlockCount24h)/mn2/COIN;
+    (mn1==0) ? roi1 = 0 : roi1 = (GetMasternodeRewardProportion(1)*BlockReward*BlockCount24h)/mn1/COIN;
     if (CurrentBlock >= 0) {
         /*
         ui->roi_1->setText(mn1==0 ? "-" : QString::number(((((0.4*BlockReward*1440)/mn1)*365)/3000)/1000000,'f',0).append("%"));
@@ -376,15 +381,15 @@ void OverviewPage::updateMasternodeInfo()
         ui->roi_3->setText(mn3==0 ? "-" : QString::number(((((0.2*BlockReward*1440)/mn3)*365)/25000)/1000000,'f',0).append("%"));
         ui->roi_4->setText(mn4==0 ? "-" : QString::number(((((0.02*BlockReward*1440)/mn4)*365)/100000)/1000000,'f',0).append("%"));
         */
-        ui->roi_11->setText(mn3==0 ? "-" : QString::number(roi1,'f',0).append("  |"));
+        ui->roi_11->setText(mn1==0 ? "-" : QString::number(roi1,'f',0).append("  |"));
         ui->roi_21->setText(mn2==0 ? "-" : QString::number(roi2,'f',0).append("  |"));
-        ui->roi_31->setText(mn1==0 ? "-" : QString::number(roi3,'f',0).append("  |"));
+        ui->roi_31->setText(mn3==0 ? "-" : QString::number(roi3,'f',0).append("  |"));
 
-        ui->roi_12->setText(mn3==0 ? " " : QString::number(  5000/roi1,'f',1).append(" days"));
-        ui->roi_22->setText(mn2==0 ? " " : QString::number( 50000/roi2,'f',1).append(" days"));
-        ui->roi_32->setText(mn1==0 ? " " : QString::number( 1000000/roi3,'f',1).append(" days"));
+        ui->roi_12->setText((mn1==0 || roi1==0) ? " " : QString::number( GetMasternodeCollateral(1)/roi1,'f',1).append(" days"));
+        ui->roi_22->setText((mn2==0 || roi2==0) ? " " : QString::number( GetMasternodeCollateral(2)/roi2,'f',1).append(" days"));
+        ui->roi_32->setText((mn3==0 || roi3==0) ? " " : QString::number( GetMasternodeCollateral(3)/roi3,'f',1).append(" days"));
     }
-    CAmount tNodesSumm = mn3*5000 + mn2*50000 + mn1*1000000;
+    CAmount tNodesSumm = mn3*GetMasternodeCollateral(3) + mn2*GetMasternodeCollateral(2) + mn1*GetMasternodeCollateral(1);
     CAmount tMoneySupply = chainActive.Tip()->nMoneySupply;
     double tLocked = tMoneySupply > 0 ? 100 * static_cast<double>(tNodesSumm) / static_cast<double>(tMoneySupply / COIN) : 0;
     ui->label_LockedCoin_value->setText(QString::number(tNodesSumm).append(" (" + QString::number(tLocked,'f',1) + "%)"));
@@ -396,9 +401,9 @@ void OverviewPage::updateMasternodeInfo()
 
   // update collateral info
   if (CurrentBlock >= 0) {
-      ui->label_lcolat->setText("5000 AXEL");
-      ui->label_mcolat->setText("50000 AXEL");
-      ui->label_fcolat->setText("1000000 AXEL");
+      ui->tier3_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(3)));
+      ui->tier2_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(2)));
+      ui->tier1_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(1)));
   }
 
 }
