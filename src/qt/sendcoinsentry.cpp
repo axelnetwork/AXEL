@@ -146,7 +146,7 @@ bool SendCoinsEntry::validate()
     if (retval && GUIUtil::isDust(ui->payTo->text(), ui->payAmount->value())) {
         CAmount dust=GUIUtil::getDust();
         QString strdust=QString::fromStdString(strprintf("%d.%08d", dust / COIN, dust % COIN));
-        QString strUnit = Params().NetworkID() == CBaseChainParams::MAIN ? tr("AXEL") : tr("tAXEL");
+        QString strUnit = Params().NetworkID() == CBaseChainParams::MAIN ? (Params().IsPreProduction() ? tr("pAXEL") : tr("AXEL")) : tr("tAXEL");
         QString strMessage = tr("The amount should be greater than or equal to minimum %1 %2.").arg(strdust).arg(strUnit);
         ui->dustLabel->setStyleSheet("QLabel { color: red; }");
         ui->dustLabel->setText(strMessage);

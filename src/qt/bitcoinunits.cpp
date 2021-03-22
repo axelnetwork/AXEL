@@ -57,11 +57,20 @@ QString BitcoinUnits::name(int unit)
     if (Params().NetworkID() == CBaseChainParams::MAIN) {
         switch (unit) {
         case AXEL:
-            return QString("AXEL");
+            if(Params().IsPreProduction())
+                return QString("pAXEL");
+            else
+                return QString("AXEL");
         case mAXEL:
-            return QString("mAXEL");
+            if(Params().IsPreProduction())
+                return QString("mpAXEL");
+            else
+                return QString("mAXEL");
         case uAXEL:
-            return QString::fromUtf8("μAXEL");
+            if(Params().IsPreProduction())
+                return QString::fromUtf8("μpAXEL");
+            else
+                return QString::fromUtf8("μAXEL");
         default:
             return QString("???");
         }
@@ -70,7 +79,7 @@ QString BitcoinUnits::name(int unit)
         case AXEL:
             return QString("tAXEL");
         case mAXEL:
-            return QString("mAXEL");
+            return QString("mtAXEL");
         case uAXEL:
             return QString::fromUtf8("μtAXEL");
         default:
@@ -84,11 +93,20 @@ QString BitcoinUnits::description(int unit)
     if (Params().NetworkID() == CBaseChainParams::MAIN) {
         switch (unit) {
         case AXEL:
-            return QString("AXEL");
+            if(Params().IsPreProduction())
+                return QString("PreprodAXELs");
+            else
+                return QString("AXEL");
         case mAXEL:
-            return QString("Milli-AXEL (1 / 1" THIN_SP_UTF8 "000)");
+            if(Params().IsPreProduction())
+                return QString("Milli-PreprodAXELs (1 / 1" THIN_SP_UTF8 "000)");
+            else
+                return QString("Milli-AXEL (1 / 1" THIN_SP_UTF8 "000)");
         case uAXEL:
-            return QString("Micro-AXEL (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+            if(Params().IsPreProduction())
+                return QString("Micro-PreprodAXELs (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+            else
+                return QString("Micro-AXEL (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
         default:
             return QString("???");
         }

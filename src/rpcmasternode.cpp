@@ -300,6 +300,7 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"level\": n,          (numeric) Masternode Level\n"
             "    \"rank\": n,           (numeric) Masternode Rank (or 0 if not enabled)\n"
+            "    \"client\": \"version\", (string) The client Version.\n"
             "    \"txhash\": \"hash\",  (string) Collateral transaction hash\n"
             "    \"outidx\": n,         (numeric) Collateral transaction output index\n"
             "    \"status\": s,         (string) Status (ENABLED/EXPIRED/REMOVE/etc)\n"
@@ -327,7 +328,10 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
         UniValue obj(UniValue::VOBJ);
         std::string strVin = s.second.vin.prevout.ToStringShort();
         std::string strTxHash = s.second.vin.prevout.hash.ToString();
+        int clientVer = s.second.lastPing.clientVer;
         uint32_t oIdx = s.second.vin.prevout.n;
+        std::string client_name;
+        std::string client_version = FormatSubVersion(client_name, clientVer, std::vector<string>());
 
         CMasternode* mn = mnodeman.Find(s.second.vin);
 
@@ -346,15 +350,22 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
             obj.push_back(Pair("level", mn->Level()));
             obj.push_back(Pair("rank", (strStatus == "ENABLED" ? s.first : 0)));
             obj.push_back(Pair("network", strNetwork));
+            obj.push_back(Pair("uid", mn->lastPing.uid));
+            obj.push_back(Pair("client", client_version));
             obj.push_back(Pair("txhash", strTxHash));
             obj.push_back(Pair("outidx", (uint64_t)oIdx));
             obj.push_back(Pair("status", strStatus));
+            obj.push_back(Pair("mnaddr", CBitcoinAddress(mn->pubKeyMasternode.GetID()).ToString()));
             obj.push_back(Pair("addr", CBitcoinAddress(mn->pubKeyCollateralAddress.GetID()).ToString()));
             obj.push_back(Pair("version", mn->protocolVersion));
             obj.push_back(Pair("lastseen", (int64_t)mn->lastPing.sigTime));
+            obj.push_back(Pair("lastinvalidping", (int64_t)mn->invalidPing.sigTime));
             obj.push_back(Pair("activetime", (int64_t)(mn->lastPing.sigTime - mn->sigTime)));
             obj.push_back(Pair("lastpaid", (int64_t)mn->GetLastPaid()));
             obj.push_back(Pair("ip", mn->addr.ToString()));
+
+            obj.push_back(Pair("mnbv", mn->mnbVer));//added
+            obj.push_back(Pair("sigAuth", HexStr(mn->sigAuth)));//added
 
             ret.push_back(obj);
         }
@@ -660,7 +671,7 @@ UniValue startmasternode (const UniValue& params, bool fHelp)
                 if (strCommand == "disabled" && pmn->IsEnabled()) continue;
             }
 
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), mne.getAuth(), errorMessage);
 
             UniValue statusObj(UniValue::VOBJ);
             statusObj.push_back(Pair("alias", mne.getAlias()));
@@ -707,7 +718,7 @@ UniValue startmasternode (const UniValue& params, bool fHelp)
             found = true;
             std::string errorMessage;
 
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), mne.getAuth(), errorMessage);
 
             statusObj.push_back(Pair("result", result ? "successful" : "failed"));
 
@@ -755,21 +766,6 @@ UniValue createmasternodekey (const UniValue& params, bool fHelp)
 
     CKey secret;
     secret.MakeNewKey(false);
-
-    // // use for generating of pub/priv spork keys
-    // CPubKey pubKey = secret.GetPubKey();
-    // CKeyID vchAddressA = pubKey.GetID();
-
-    // const unsigned char* it;
-    // char buf[8];
-    // std::string strPubKey;
-    // memset(buf, 0, sizeof(buf));
-    // for (it = pubKey.begin(); it != pubKey.end(); ++it) {
-    //     sprintf(buf, "%0.2x", *it);
-    //     strPubKey += buf;
-    // }
-    // LogPrintf("spork keys:\npub key hash: %s\nstrSporkKey=%s\n-sporkkey=%s\n",
-    //     CBitcoinAddress(vchAddressA).ToString(), strPubKey, CBitcoinSecret(secret).ToString());
 
     return CBitcoinSecret(secret).ToString();
 }
@@ -899,6 +895,7 @@ UniValue getmasternodestatus (const UniValue& params, bool fHelp)
         mnObj.push_back(Pair("outputidx", (uint64_t)activeMasternode.vin.prevout.n));
         mnObj.push_back(Pair("netaddr", activeMasternode.service.ToString()));
         mnObj.push_back(Pair("addr", CBitcoinAddress(pmn->pubKeyCollateralAddress.GetID()).ToString()));
+        mnObj.push_back(Pair("auth", HexStr(pmn->sigAuth.begin(), pmn->sigAuth.end())));
         mnObj.push_back(Pair("status", activeMasternode.status));
         mnObj.push_back(Pair("message", activeMasternode.GetStatus()));
         return mnObj;

@@ -14,6 +14,7 @@
 #include "sync.h"
 #include "timedata.h"
 #include "util.h"
+#include "clientversion.h"
 
 #define MASTERNODE_MIN_CONFIRMATIONS 15
 #define MASTERNODE_MIN_MNP_SECONDS (4 * 60)
@@ -22,6 +23,9 @@
 #define MASTERNODE_EXPIRATION_SECONDS (120 * 60)
 #define MASTERNODE_REMOVAL_SECONDS (130 * 60)
 #define MASTERNODE_CHECK_SECONDS 5
+
+#define MASTERNODE_V1 0
+#define MASTERNODE_V2 1
 
 using namespace std;
 
@@ -44,6 +48,10 @@ public:
     uint256 blockHash;
     int64_t sigTime; //mnb message times
     std::vector<unsigned char> vchSig;
+    int clientVer;
+    int mnpVer;
+    std::string uid;
+    std::vector<unsigned char> resSig;
     //removed stop
 
     CMasternodePing();
@@ -60,9 +68,12 @@ public:
         READWRITE(vchSig);
     }
 
-    bool CheckAndUpdate(int& nDos, bool fRequireEnabled = true);
+    bool CheckAndUpdate(int& nDos, bool fRequireEnabled = true, bool fIgnoreSigTime = false, bool fNoRelay = false, bool fcheckUidEmpty = false);
+    bool BuildMessage(std::string &strMessage);
     bool Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode);
-    void Relay();
+    bool Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode,int64_t signTimeIn);
+    bool VerifyRes(CPubKey& pubKeyMasternode, std::vector<unsigned char> sigAuth, bool fcheckUidEmpty = false);
+    virtual void Relay();
 
     uint256 GetHash()
     {
@@ -84,6 +95,10 @@ public:
         swap(first.blockHash, second.blockHash);
         swap(first.sigTime, second.sigTime);
         swap(first.vchSig, second.vchSig);
+        swap(first.clientVer, second.clientVer);
+        swap(first.mnpVer, second.mnpVer);
+        swap(first.uid, second.uid);
+        swap(first.resSig, second.resSig);
     }
 
     CMasternodePing& operator=(CMasternodePing from)
@@ -101,13 +116,33 @@ public:
     }
 };
 
+class CMasternodePingV2 : public CMasternodePing
+{
+public:
+    CMasternodePingV2() {mnpVer = MASTERNODE_V2;};
+    CMasternodePingV2(CTxIn& newVin):CMasternodePing(newVin) {mnpVer = MASTERNODE_V2; clientVer = CLIENT_VERSION;};
+    virtual void Relay();
+    ADD_SERIALIZE_METHODS;
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
+        READWRITE(vin);
+        READWRITE(blockHash);
+        READWRITE(sigTime);
+        READWRITE(vchSig);
+        READWRITE(clientVer);
+        READWRITE(uid);
+        READWRITE(resSig);
+    }
+};
+
 //
 // The Masternode Class. For managing the Obfuscation process. It contains the inputs, signature to prove
 // it's the one who own that ip address and code for calculating the payment election.
 //
 class CMasternode
 {
-private:
+protected:
     // critical section to protect the inner data structures
     mutable CCriticalSection cs;
     int64_t lastTimeChecked;
@@ -123,7 +158,11 @@ public:
     enum LevelValue : unsigned {
         UNSPECIFIED = 0u,
         MIN = 1u,
-        MAX = 3u,
+        LEVEL_1 = 1u,
+        LEVEL_2,
+        LEVEL_3,
+        LEVEL_4,
+        MAX = 4u,
     };
 
     CTxIn vin;
@@ -140,7 +179,13 @@ public:
     bool allowFreeTx;
     int protocolVersion;
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
+    int mnbVer;// MASTERNODE_V1: old,  MASTERNODE_V2: signature should be included
+    std::vector<unsigned char> sigAuth;// spork key signature
     CMasternodePing lastPing;
+    CMasternodePingV2 *lastPingV2 = (CMasternodePingV2 *)&lastPing;
+
+    CMasternodePing invalidPing;
+    CMasternodePingV2 *invalidPingV2 = (CMasternodePingV2 *)&invalidPing;
 
     static unsigned Level(CAmount vin_val, int blockHeight);
     static unsigned Level(const CTxIn& vin, int blockHeight);
@@ -168,12 +213,15 @@ public:
         swap(first.deposit, second.deposit);
         swap(first.sigTime, second.sigTime);
         swap(first.lastPing, second.lastPing);
+        swap(first.invalidPing, second.invalidPing);
         swap(first.cacheInputAge, second.cacheInputAge);
         swap(first.cacheInputAgeBlock, second.cacheInputAgeBlock);
         swap(first.unitTest, second.unitTest);
         swap(first.allowFreeTx, second.allowFreeTx);
         swap(first.protocolVersion, second.protocolVersion);
         swap(first.nLastDsq, second.nLastDsq);
+        swap(first.mnbVer, second.mnbVer);
+        swap(first.sigAuth, second.sigAuth);
     }
 
     CMasternode& operator=(CMasternode from)
@@ -283,6 +331,35 @@ public:
     bool IsValidNetAddr();
 };
 
+class CMasternodeV2 : public CMasternode
+{
+public:
+    ADD_SERIALIZE_METHODS;
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
+        LOCK(cs);
+
+        READWRITE(vin);
+        READWRITE(addr);
+        READWRITE(pubKeyCollateralAddress);
+        READWRITE(pubKeyMasternode);
+        READWRITE(sig);
+        READWRITE(sigTime);
+        READWRITE(protocolVersion);
+        READWRITE(activeState);
+        READWRITE(deposit);
+        READWRITE(*lastPingV2);
+        READWRITE(*invalidPingV2);
+        READWRITE(cacheInputAge);
+        READWRITE(cacheInputAgeBlock);
+        READWRITE(unitTest);
+        READWRITE(allowFreeTx);
+        READWRITE(nLastDsq);
+        READWRITE(mnbVer);
+        READWRITE(sigAuth);
+    }
+};
 
 //
 // The Masternode Broadcast Class : Contains a different serialize method for sending masternodes through the network
@@ -292,13 +369,16 @@ class CMasternodeBroadcast : public CMasternode
 {
 public:
     CMasternodeBroadcast();
+    CMasternodeBroadcast(int mnvVerIn);//added
     CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey newPubkey, CPubKey newPubkey2, int protocolVersionIn);
+    CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey newPubkey, CPubKey newPubkey2, int protocolVersionIn, int mnvVerIn, std::vector<unsigned char> sigAuthIn);//added
     CMasternodeBroadcast(const CMasternode& mn);
 
     bool CheckAndUpdate(int& nDoS);
     bool CheckInputsAndAdd(int& nDos);
+    bool BuildMessage(std::string &strMessage);
     bool Sign(CKey& keyCollateralAddress);
-    void Relay();
+    virtual void Relay();
 
     ADD_SERIALIZE_METHODS;
 
@@ -329,6 +409,75 @@ public:
     static bool Create(std::string strService, std::string strKey, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast& mnbRet, bool fOffline = false);
     static bool CheckDefaultPort(std::string strService, std::string& strErrorRet, std::string strContext);
     static bool CheckDefaultPort(const CService& service, std::string& strErrorRet, std::string strContext);
+};
+
+class CMasternodeBroadcastV2 : public CMasternodeBroadcast
+{
+public:
+    CMasternodeBroadcastV2() {mnbVer = MASTERNODE_V2;}
+    CMasternodeBroadcastV2(CService newAddr, CTxIn newVin, CPubKey newPubkey, CPubKey newPubkey2, int protocolVersionIn, std::vector<unsigned char> sigAuthIn):CMasternodeBroadcast(newAddr, newVin, newPubkey, newPubkey2, protocolVersionIn, MASTERNODE_V2, sigAuthIn){
+        mnbVer = MASTERNODE_V2;
+    };
+    virtual void Relay();
+
+    ADD_SERIALIZE_METHODS;
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
+        READWRITE(vin);
+        READWRITE(addr);
+        READWRITE(pubKeyCollateralAddress);
+        READWRITE(pubKeyMasternode);
+        READWRITE(sig);
+        READWRITE(sigTime);
+        READWRITE(protocolVersion);
+        READWRITE(*lastPingV2);
+        READWRITE(*invalidPingV2);
+        READWRITE(nLastDsq);
+        READWRITE(mnbVer);
+        READWRITE(sigAuth);
+    }
+};
+
+class CMasternodeAuth
+{
+public:
+    enum VersionValue : int
+    {
+        V1 = 1u,
+        END
+    };
+    enum LevelValue : int
+    {
+        UNSPECIFIED = 0,
+        MIN = 1u,
+        level1 = MIN,
+        level2 = 2u,
+        MAX = level2
+    };
+
+    std::string strMnAddr;
+    COutPoint prevout;
+    int version;
+    int level;
+    std::vector<unsigned char> vchSignature;
+    std::vector<unsigned char> vchSigWithPreFix;
+
+    CMasternodeAuth() {version = 0; level = UNSPECIFIED;};
+    CMasternodeAuth(std::vector<unsigned char> vchSignatureWithPreFix, std::string strAddr, COutPoint vout);
+    CMasternodeAuth(std::vector<unsigned char> vchSignatureWithPreFix, CPubKey pubKeyMasternode, COutPoint vout);
+    CMasternodeAuth(std::string strAddr, COutPoint vout, int inLevel);
+    CMasternodeAuth(int level);
+    bool isValidVersion(int version);
+    bool isValidLevel(int level);
+    int GetLevel();
+    std::vector<unsigned char> AddPreFix(int version, int level, std::vector<unsigned char> vchSignature);
+    bool GetSignature(std::vector<unsigned char> vchSignatureWithPreFix, std::vector<unsigned char>& signature, int& v, int& l);
+    bool CheckSignature(std::string& errorMessage);
+    bool Sign(std::vector<unsigned char>& vchSigAuth, std::string& errorMessage);
+
+private:
+        std::string BuildMessage(std::string strMnAddr, std::string strVin, int prevout_n, int level);
 };
 
 #endif

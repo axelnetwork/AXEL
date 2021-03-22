@@ -322,6 +322,7 @@ static const CRPCCommand vRPCCommands[] =
         {"rawtransactions", "getrawtransaction", &getrawtransaction, true, false, false},
         {"rawtransactions", "sendrawtransaction", &sendrawtransaction, false, false, false},
         {"rawtransactions", "signrawtransaction", &signrawtransaction, false, false, false}, /* uses wallet if enabled */
+        {"rawtransactions", "isutxo", &isutxo, false, false, false},
 
         /* Utility functions */
         {"util", "createmultisig", &createmultisig, true, true, false},
@@ -354,6 +355,9 @@ static const CRPCCommand vRPCCommands[] =
         {"axel", "getmasternodescores", &getmasternodescores, true, true, false},
         {"axel", "mnsync", &mnsync, true, true, false},
         {"axel", "spork", &spork, true, true, false},
+        {"axel", "notify", &notify, true, true, false},
+        {"axel", "restest", &restest, true, true, false},
+        {"axel", "signmncollateral", &signmncollateral, true, false, false},
         {"axel", "getpoolinfo", &getpoolinfo, true, true, false},
 #ifdef ENABLE_WALLET
         {"axel", "obfuscation", &obfuscation, false, false, true}, /* not threadSafe because of SendMoney */
@@ -366,6 +370,7 @@ static const CRPCCommand vRPCCommands[] =
         {"wallet", "dumpprivkey", &dumpprivkey, true, false, true},
         {"wallet", "dumpwallet", &dumpwallet, true, false, true},
 #endif // ENABLE_WEBWALLET
+        {"wallet", "getaddressfromprivatekey", &getaddressfromprivatekey, true, true, false},
         {"wallet", "bip38encrypt", &bip38encrypt, true, false, true},
         {"wallet", "bip38decrypt", &bip38decrypt, true, false, true},
         {"wallet", "encryptwallet", &encryptwallet, true, false, true},

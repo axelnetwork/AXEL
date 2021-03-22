@@ -26,6 +26,20 @@ struct CDNSSeedData {
     CDNSSeedData(const std::string& strName, const std::string& strHost) : name(strName), host(strHost) {}
 };
 
+typedef struct MapBlockAddr
+{
+    // addr will be used as axelFixedAddr once the block height >= begin
+    int begin;
+    // This AXEL Fixed Address is used to receive transaction fees
+    std::string addr;
+} MapBlockAddr;
+
+typedef struct AXELFixedAddrs
+{
+    MapBlockAddr * mapBA;
+    int size;
+} AXELFixedAddrs;
+
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
  * axel system. There are three: the main network on which people trade goods
@@ -104,6 +118,7 @@ public:
     std::string SporkKey() const { return strSporkKey; }
     std::string ObfuscationPoolDummyAddress() const { return strObfuscationPoolDummyAddress; }
     CBaseChainParams::Network NetworkID() const { return networkID; }
+    bool IsPreProduction() const { return fPreProduction; };
 
     /** Height or Time Based Activations **/
     //todo: ModifierUpgradeBlock affect POS
@@ -111,9 +126,11 @@ public:
     int LAST_POW_BLOCK() const { return nLastPOWBlock; }
     int StartMNPaymentsBlock() const {return nStartMasternodePaymentsBlock; }
 
+    AXELFixedAddrs *AxelFixedAddressList() const { return pAxelFixedAddrs; }
+
 
 protected:
-    CChainParams() {}
+    CChainParams() { fPreProduction = false; }
 
     uint256 hashGenesisBlock;
     MessageStartChars pchMessageStart;
@@ -145,6 +162,7 @@ protected:
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     CBaseChainParams::Network networkID;
+    bool fPreProduction; // It can be set as "true" only in "mainnet" mode
     std::string strNetworkID;
     CBlock genesis;
     std::vector<CAddress> vFixedSeeds;
@@ -160,6 +178,7 @@ protected:
     std::string strSporkKey;
     std::string strObfuscationPoolDummyAddress;
     int64_t nStartMasternodePayments;
+    AXELFixedAddrs *pAxelFixedAddrs;
 };
 
 /**

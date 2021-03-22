@@ -395,6 +395,47 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+UniValue getaddressfromprivatekey (const UniValue& params, bool fHelp)
+{
+    if (fHelp || (params.size() != 1))
+        throw runtime_error(
+            "getaddressfromprivatekey\n"
+            "\nGet the address and public key from private key.\n"
+            "\nArguments:\n"
+            "1. \"privkey\"   (string, required) The private key\n"
+            "\nResult:\n"
+            "\"address:\"    (string) Private key\n"
+            "\"pubkey:\"    (string) Public key\n"
+            "\nExamples:\n" +
+            HelpExampleCli("getaddressfromprivatekey", "xxxxxx") + HelpExampleRpc("getaddressfromprivatekey", "xxxxxx"));
+
+    CBitcoinSecret vchSecret;
+    bool fGood = vchSecret.SetString(params[0].get_str());
+
+    if (!fGood) {
+        return "Invalid private key.";
+    }
+
+    CKey key = vchSecret.GetKey();
+    CPubKey pubkey = key.GetPubKey();
+    std::string strAddr = CBitcoinAddress(pubkey.GetID()).ToString();
+
+    std::string strPubKey;
+    const unsigned char* it;
+    char buf[8];
+    memset(buf, 0, sizeof(buf));
+    for (it = pubkey.begin(); it != pubkey.end(); ++it) {
+        sprintf(buf, "%0.2x", *it);
+        strPubKey += buf;
+    }
+
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("address", strAddr));
+    obj.push_back(Pair("pubkey", strPubKey));
+
+    return obj;
+}
+
 UniValue bip38encrypt(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)

@@ -30,6 +30,7 @@ qt_test_test_axel_qt_LDADD = $(LIBBITCOINQT) $(LIBBITCOIN_SERVER)
 if ENABLE_WALLET
 qt_test_test_axel_qt_LDADD += $(LIBBITCOIN_WALLET)
 endif
+qt_test_test_axel_qt_LDADD += $(LIBAXEL_RESCK)
 if ENABLE_ZMQ
 qt_test_test_axel_qt_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
 endif

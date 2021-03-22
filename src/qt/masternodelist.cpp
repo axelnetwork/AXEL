@@ -252,9 +252,10 @@ void MasternodeList::updateMyMasternodeInfo(QString strAlias, QString strAddr, C
 
         switch (pmn->Level())
         {
-            case 1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
-            case 2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
-            case 3: mnLevelText = "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case CMasternode::LevelValue::LEVEL_1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
+            case CMasternode::LevelValue::LEVEL_2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
+            case CMasternode::LevelValue::LEVEL_3: mnLevelText = MnReword2020Enabled()? "Tier 3x" : "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case CMasternode::LevelValue::LEVEL_4: mnLevelText = "Tier 3"; if (roi4 > 1) tLuck = ((masternodeCoins/COIN) / roi4)*100; break;
         }
     }
 
@@ -356,6 +357,8 @@ void MasternodeList::updateNodeList()
         double tLuck = 0;
         CAmount masternodeCoins = 0;
         int64_t activeSeconds = mn.lastPing.sigTime - mn.sigTime;
+        std::string client_name;
+        std::string client_version = FormatSubVersion(client_name, mn.lastPing.clientVer, std::vector<string>());
         std::string pubkey = CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString();
         auto it = masternodeRewards.find(pubkey);
         if (it != masternodeRewards.end())
@@ -363,14 +366,18 @@ void MasternodeList::updateNodeList()
 
         switch (mn.Level())
         {
-            case 1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
-            case 2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
-            case 3: mnLevelText = "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case CMasternode::LevelValue::LEVEL_1: mnLevelText = "Tier 1"; if (roi1 > 1) tLuck = ((masternodeCoins/COIN) / roi1)*100; break;
+            case CMasternode::LevelValue::LEVEL_2: mnLevelText = "Tier 2"; if (roi2 > 1) tLuck = ((masternodeCoins/COIN) / roi2)*100; break;
+            case CMasternode::LevelValue::LEVEL_3: mnLevelText = MnReword2020Enabled()? "Tier 3x" : "Tier 3"; if (roi3 > 1) tLuck = ((masternodeCoins/COIN) / roi3)*100; break;
+            case CMasternode::LevelValue::LEVEL_4: mnLevelText = "Tier 3"; if (roi4 > 1) tLuck = ((masternodeCoins/COIN) / roi4)*100; break;
         }
 
         if (strCurrentFilter != "")
         {
-            strToFilter = QString::fromStdString(mnLevelText) + " " +
+            strToFilter = QString::fromStdString(mn.addr.ToString()) + " " +
+                          QString::fromStdString(mnLevelText) + " " +
+                          QString::fromStdString(client_version) + " " +
+                          QString::fromStdString(mn.lastPing.uid) + " " +
                           QString::number(mn.protocolVersion) + " " +
                           QString::fromStdString(mn.Status()) + " " +
                           QString::fromStdString(DurationToDHMS(activeSeconds)) + " " +
@@ -384,6 +391,8 @@ void MasternodeList::updateNodeList()
 //        QTableWidgetItem *levelItem = new QTableWidgetItem(QString::number(mn.Level()));
 
         QTableWidgetItem *protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
+        QTableWidgetItem *clientVersion = new QTableWidgetItem(QString::fromStdString(client_version));
+        QTableWidgetItem *nodeUid = new QTableWidgetItem(QString::fromStdString(mn.lastPing.uid));
         //protocolItem->setTextAlignment(Qt::AlignHCenter);
         QTableWidgetItem *statusItem = new QTableWidgetItem(QString::fromStdString(mn.Status()));
 
@@ -397,14 +406,18 @@ void MasternodeList::updateNodeList()
 
         ui->tableWidgetMasternodes->insertRow(0);
         ui->tableWidgetMasternodes->setItem(0, 0, addressItem);
-        ui->tableWidgetMasternodes->setItem(0, 1, levelItem);
-        ui->tableWidgetMasternodes->setItem(0, 2, protocolItem);
-        ui->tableWidgetMasternodes->setItem(0, 3, statusItem);
-        ui->tableWidgetMasternodes->setItem(0, 4, activeSecondsItem);
-        ui->tableWidgetMasternodes->setItem(0, 5, lastSeenItem);
-        ui->tableWidgetMasternodes->setItem(0, 6, pubkeyItem);
-        ui->tableWidgetMasternodes->setItem(0, 7, mnReward);
-        ui->tableWidgetMasternodes->setItem(0, 8, mnLuck);
+        ui->tableWidgetMasternodes->setItem(0, 1, nodeUid);
+        ui->tableWidgetMasternodes->setItem(0, 2, levelItem);
+        ui->tableWidgetMasternodes->setItem(0, 3, protocolItem);
+        ui->tableWidgetMasternodes->setItem(0, 4, clientVersion);
+        ui->tableWidgetMasternodes->setItem(0, 5, statusItem);
+        ui->tableWidgetMasternodes->setItem(0, 6, activeSecondsItem);
+        ui->tableWidgetMasternodes->setItem(0, 7, lastSeenItem);
+        ui->tableWidgetMasternodes->setItem(0, 8, pubkeyItem);
+        ui->tableWidgetMasternodes->setItem(0, 9, mnReward);
+        ui->tableWidgetMasternodes->setItem(0, 10, mnLuck);
+
+
 
     }
 

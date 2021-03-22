@@ -153,6 +153,7 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     ui->labelWalletStatus->setText("(" + tr("out of sync") + ")");
   //  ui->labelObfuscationSyncStatus->setText("(" + tr("out of sync") + ")");
     ui->labelTransactionsStatus->setText("(" + tr("out of sync") + ")");
+    ui->blabel_axel->setText(QString(BitcoinUnits::name(BitcoinUnits::AXEL)));
 
     if (fLiteMode) {
         //ui->frameObfuscation->setVisible(false);
@@ -315,6 +316,7 @@ void OverviewPage::updateDisplayUnit()
         txdelegate->unit = nDisplayUnit;
 
         ui->listTransactions->update();
+        ui->blabel_axel->setText(QString(BitcoinUnits::name(nDisplayUnit)));
     }
 }
 
@@ -324,11 +326,19 @@ void OverviewPage::updateAlerts(const QString& warnings)
   //  this->ui->labelAlerts->setText(warnings);
 }
 
-double roi1, roi2, roi3;
+double roi1, roi2, roi3, roi4;
 
 void OverviewPage::updateMasternodeInfo()
 {
   int CurrentBlock = clientModel->getNumBlocks();
+
+  ui->graphMN4->setVisible(MnReword2020Enabled());
+  ui->tier_4->setVisible(MnReword2020Enabled());
+  ui->roi_41->setVisible(MnReword2020Enabled());
+  ui->roi_42->setVisible(MnReword2020Enabled());
+  ui->tier4_colat->setVisible(MnReword2020Enabled());
+  ui->tier_3->setText(MnReword2020Enabled()? "Tier 3x:" : "Tier 3 :");
+  ui->tier_4->setText(MnReword2020Enabled()? "Tier 3 :" : "Tier 3x:");
 
   if (masternodeSync.IsBlockchainSynced() && masternodeSync.IsSynced())
   {
@@ -336,34 +346,40 @@ void OverviewPage::updateMasternodeInfo()
    int mn1=0;
    int mn2=0;
    int mn3=0;
+   int mn4=0;
    int totalmn=0;
    std::vector<CMasternode> vMasternodes = mnodeman.GetFullMasternodeMap();
     for(auto& mn : vMasternodes)
     {
        switch ( mn.Level())
        {
-           case 1:
+           case CMasternode::LevelValue::LEVEL_1:
            mn1++;break;
-           case 2:
+           case CMasternode::LevelValue::LEVEL_2:
            mn2++;break;
-           case 3:
+           case CMasternode::LevelValue::LEVEL_3:
            mn3++;break;
+           case CMasternode::LevelValue::LEVEL_4:
+           mn4++;break;
        }
 
     }
-    totalmn=mn1+mn2+mn3;
+    totalmn=mn1+mn2+mn3+mn4;
     ui->labelMnTotal_Value->setText(QString::number(totalmn));
 
     ui->graphMN1->setMaximum(totalmn);
     ui->graphMN2->setMaximum(totalmn);
     ui->graphMN3->setMaximum(totalmn);
+    ui->graphMN4->setMaximum(totalmn);
     ui->graphMN1->setValue(mn1);
     ui->graphMN2->setValue(mn2);
     ui->graphMN3->setValue(mn3);
+    ui->graphMN4->setValue(mn4);
 
     ui->tier_1->setText("Tier 1 :");
     ui->tier_2->setText("Tier 2 :");
-    ui->tier_3->setText("Tier 3 :");
+    ui->tier_3->setText(MnReword2020Enabled()? "Tier 3x:" : "Tier 3 :");
+    ui->tier_4->setText(MnReword2020Enabled()? "Tier 3 :" : "Tier 3x:");
 
 
     // TODO: need a read actual 24h blockcount from chain
@@ -371,9 +387,10 @@ void OverviewPage::updateMasternodeInfo()
 
     // update ROI
     double BlockReward = GetBlockValue(CurrentBlock);
-    (mn3==0) ? roi3 = 0 : roi3 = (GetMasternodeRewardProportion(3)*BlockReward*BlockCount24h)/mn3/COIN;
-    (mn2==0) ? roi2 = 0 : roi2 = (GetMasternodeRewardProportion(2)*BlockReward*BlockCount24h)/mn2/COIN;
-    (mn1==0) ? roi1 = 0 : roi1 = (GetMasternodeRewardProportion(1)*BlockReward*BlockCount24h)/mn1/COIN;
+    (mn4==0) ? roi4 = 0 : roi4 = (GetMasternodeRewardProportion(CMasternode::LevelValue::LEVEL_4)*BlockReward*BlockCount24h)/mn4/COIN;
+    (mn3==0) ? roi3 = 0 : roi3 = (GetMasternodeRewardProportion(CMasternode::LevelValue::LEVEL_3)*BlockReward*BlockCount24h)/mn3/COIN;
+    (mn2==0) ? roi2 = 0 : roi2 = (GetMasternodeRewardProportion(CMasternode::LevelValue::LEVEL_2)*BlockReward*BlockCount24h)/mn2/COIN;
+    (mn1==0) ? roi1 = 0 : roi1 = (GetMasternodeRewardProportion(CMasternode::LevelValue::LEVEL_1)*BlockReward*BlockCount24h)/mn1/COIN;
     if (CurrentBlock >= 0) {
         /*
         ui->roi_1->setText(mn1==0 ? "-" : QString::number(((((0.4*BlockReward*1440)/mn1)*365)/3000)/1000000,'f',0).append("%"));
@@ -384,12 +401,15 @@ void OverviewPage::updateMasternodeInfo()
         ui->roi_11->setText(mn1==0 ? "-" : QString::number(roi1,'f',0).append("  |"));
         ui->roi_21->setText(mn2==0 ? "-" : QString::number(roi2,'f',0).append("  |"));
         ui->roi_31->setText(mn3==0 ? "-" : QString::number(roi3,'f',0).append("  |"));
+        ui->roi_41->setText(mn4==0 ? "-" : QString::number(roi4,'f',0).append("  |"));
 
-        ui->roi_12->setText((mn1==0 || roi1==0) ? " " : QString::number( GetMasternodeCollateral(1)/roi1,'f',1).append(" days"));
-        ui->roi_22->setText((mn2==0 || roi2==0) ? " " : QString::number( GetMasternodeCollateral(2)/roi2,'f',1).append(" days"));
-        ui->roi_32->setText((mn3==0 || roi3==0) ? " " : QString::number( GetMasternodeCollateral(3)/roi3,'f',1).append(" days"));
+        ui->roi_12->setText((mn1==0 || roi1==0) ? " " : QString::number( GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_1)/roi1,'f',1).append(" days"));
+        ui->roi_22->setText((mn2==0 || roi2==0) ? " " : QString::number( GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_2)/roi2,'f',1).append(" days"));
+        ui->roi_32->setText((mn3==0 || roi3==0) ? " " : QString::number( GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_3)/roi3,'f',1).append(" days"));
+        ui->roi_42->setText((mn4==0 || roi4==0) ? " " : QString::number( GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_4)/roi4,'f',1).append(" days"));
     }
-    CAmount tNodesSumm = mn3*GetMasternodeCollateral(3) + mn2*GetMasternodeCollateral(2) + mn1*GetMasternodeCollateral(1);
+    CAmount tNodesSumm = mn4*GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_4) + mn3*GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_3)\
+                         + mn2*GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_2) + mn1*GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_1);
     CAmount tMoneySupply = chainActive.Tip()->nMoneySupply;
     double tLocked = tMoneySupply > 0 ? 100 * static_cast<double>(tNodesSumm) / static_cast<double>(tMoneySupply / COIN) : 0;
     ui->label_LockedCoin_value->setText(QString::number(tNodesSumm).append(" (" + QString::number(tLocked,'f',1) + "%)"));
@@ -401,9 +421,11 @@ void OverviewPage::updateMasternodeInfo()
 
   // update collateral info
   if (CurrentBlock >= 0) {
-      ui->tier3_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(3)));
-      ui->tier2_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(2)));
-      ui->tier1_colat->setText(QString("%1 AXEL").arg(GetMasternodeCollateral(1)));
+      QString strUnit = QString(BitcoinUnits::name(BitcoinUnits::AXEL));
+      ui->tier4_colat->setText(QString("%1 %2").arg(GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_4)).arg(strUnit));
+      ui->tier3_colat->setText(QString("%1 %2").arg(GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_3)).arg(strUnit));
+      ui->tier2_colat->setText(QString("%1 %2").arg(GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_2)).arg(strUnit));
+      ui->tier1_colat->setText(QString("%1 %2").arg(GetMasternodeCollateral(CMasternode::LevelValue::LEVEL_1)).arg(strUnit));
   }
 
 }
@@ -424,8 +446,8 @@ void OverviewPage::updateBlockChainInfo()
         ui->label_Nethash_value->setText(QString::number(CurrentDiff,'f',4));
 
         ui->label_CurrentBlockReward_value->setText(QString::number(BlockRewardaxel, 'f', 1));
-
-        ui->label_Supply_value->setText(QString::number(chainActive.Tip()->nMoneySupply / COIN).append(" AXEL"));
+        QString strUnit = QString(BitcoinUnits::name(BitcoinUnits::AXEL));
+        ui->label_Supply_value->setText(QString::number(chainActive.Tip()->nMoneySupply / COIN).append(" ").append(strUnit));
 
         ui->label_24hBlock_value->setText(QString::number(block24hCount));
         ui->label_24hPoS_value->setText(QString::number(static_cast<double>(posMin)/COIN,'f',1).append(" | ") + QString::number(static_cast<double>(posMax)/COIN,'f',1));

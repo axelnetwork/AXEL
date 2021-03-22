@@ -25,7 +25,10 @@ static const char* ppszTypeName[] =
         "mn winner",
         "mn announce",
         "mn ping",
-        "dstx"
+        "dstx",
+        "mn announce v2",
+        "mn ping v2",
+        "notify"
 };
 
 CMessageHeader::CMessageHeader()
@@ -140,8 +143,10 @@ bool CInv::IsMasterNodeType() const{
 
 const char* CInv::GetCommand() const
 {
-    if (!IsKnownType())
+    if (!IsKnownType()) {
         LogPrint("net", "CInv::GetCommand() : type=%d unknown type", type);
+        return "UNKNOWN";
+    }
 
     return ppszTypeName[type];
 }

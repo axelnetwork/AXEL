@@ -4,6 +4,8 @@
         <file alias="address-book">res/icons/address-book.png</file>
         <file alias="quit">res/icons/quit.png</file>
         <file alias="send">res/icons/send.png</file>
+        <file alias="send_testnet">res/icons/send_testnet.png</file>
+        <file alias="send_preprod">res/icons/send_preprod.png</file>
         <file alias="connect_0">res/icons/connect0_16.png</file>
         <file alias="connect_1">res/icons/connect1_16.png</file>
         <file alias="connect_2">res/icons/connect2_16.png</file>
@@ -23,6 +25,8 @@
         <file alias="eye_plus">res/icons/eye_plus.png</file>
         <file alias="options">res/icons/configure.png</file>
         <file alias="receiving_addresses">res/icons/receive.png</file>
+        <file alias="receiving_addresses_testnet">res/icons/receive_testnet.png</file>
+        <file alias="receiving_addresses_preprod">res/icons/receive_preprod.png</file>
 	<file alias="receiving_addresses_white">res/icons/receive_white.png</file>
         <file alias="editpaste">res/icons/editpaste.png</file>
         <file alias="editcopy">res/icons/editcopy.png</file>
@@ -31,8 +35,14 @@
         <file alias="edit">res/icons/edit.png</file>
 	<file alias="edit_white">res/icons/edit_white.png</file>
         <file alias="history">res/icons/history.png</file>
+        <file alias="history_testnet">res/icons/history_testnet.png</file>
+        <file alias="history_preprod">res/icons/history_preprod.png</file>
         <file alias="overview">res/icons/overview.png</file>
+        <file alias="overview_testnet">res/icons/overview_testnet.png</file>
+        <file alias="overview_preprod">res/icons/overview_preprod.png</file>
         <file alias="masternodes">res/icons/masternodes.png</file>
+        <file alias="masternodes_testnet">res/icons/masternodes_testnet.png</file>
+        <file alias="masternodes_preprod">res/icons/masternodes_preprod.png</file>
         <file alias="export">res/icons/export.png</file>
         <file alias="synced">res/icons/synced.png</file>
         <file alias="remove">res/icons/remove.png</file>
@@ -52,6 +62,8 @@
         <file alias="staking_active">res/icons/staking_active.png</file>
         <file alias="staking_inactive">res/icons/staking_inactive.png</file>
         <file alias="tools">res/icons/tools.png</file>
+        <file alias="tools_testnet">res/icons/tools_testnet.png</file>
+        <file alias="tools_preprod">res/icons/tools_preprod.png</file>
         <file alias="blockexplorer">res/icons/blockexplorer.png</file>
         <file alias="facebook">res/icons/icon_facebook.png</file>
         <file alias="twitter">res/icons/icon_twitter.png</file>
@@ -66,6 +78,8 @@
         <file alias="address-book">res/dark/icons/address-book.png</file>
         <file alias="quit">res/dark/icons/quit.png</file>
         <file alias="send">res/dark/icons/send.png</file>
+        <file alias="send_testnet">res/dark/icons/send_testnet.png</file>
+        <file alias="send_preprod">res/dark/icons/send_preprod.png</file>
         <file alias="connect_0">res/dark/icons/connect0_16.png</file>
         <file alias="connect_1">res/dark/icons/connect1_16.png</file>
         <file alias="connect_2">res/dark/icons/connect2_16.png</file>
@@ -85,6 +99,8 @@
         <file alias="eye_plus">res/dark/icons/eye_plus.png</file>
         <file alias="options">res/dark/icons/configure.png</file>
         <file alias="receiving_addresses">res/dark/icons/receive.png</file>
+        <file alias="receiving_addresses_testnet">res/dark/icons/receive_testnet.png</file>
+        <file alias="receiving_addresses_preprod">res/dark/icons/receive_preprod.png</file>
 	<file alias="receiving_addresses_white">res/dark/icons/receive_white.png</file>
         <file alias="editpaste">res/dark/icons/editpaste.png</file>
         <file alias="editcopy">res/dark/icons/editcopy.png</file>
@@ -93,8 +109,14 @@
         <file alias="edit">res/dark/icons/edit.png</file>
 	<file alias="edit_white">res/dark/icons/edit_white.png</file>
         <file alias="history">res/dark/icons/history.png</file>
+        <file alias="history_testnet">res/dark/icons/history_testnet.png</file>
+        <file alias="history_preprod">res/dark/icons/history_preprod.png</file>
         <file alias="overview">res/dark/icons/overview.png</file>
+        <file alias="overview_testnet">res/dark/icons/overview_testnet.png</file>
+        <file alias="overview_preprod">res/dark/icons/overview_preprod.png</file>
         <file alias="masternodes">res/dark/icons/masternodes.png</file>
+        <file alias="masternodes_testnet">res/dark/icons/masternodes_testnet.png</file>
+        <file alias="masternodes_preprod">res/dark/icons/masternodes_preprod.png</file>
         <file alias="export">res/dark/icons/export.png</file>
         <file alias="synced">res/dark/icons/synced.png</file>
         <file alias="remove">res/dark/icons/remove.png</file>
@@ -114,6 +136,8 @@
         <file alias="staking_active">res/dark/icons/staking_active.png</file>
         <file alias="staking_inactive">res/dark/icons/staking_inactive.png</file>
         <file alias="tools">res/dark/icons/tools.png</file>
+        <file alias="tools_testnet">res/dark/icons/tools_testnet.png</file>
+        <file alias="tools_preprod">res/dark/icons/tools_preprod.png</file>
         <file alias="blockexplorer">res/dark/icons/blockexplorer.png</file>
         <file alias="facebook">res/dark/icons/icon_facebook.png</file>
         <file alias="twitter">res/dark/icons/icon_twitter.png</file>
@@ -125,12 +149,18 @@
 
     <qresource prefix="/css">
         <file alias="default">res/css/default.css</file>
+        <file alias="testnet">res/css/testnet.css</file>
+        <file alias="preprod">res/css/preprod.css</file>
         <file alias="dark">res/dark/css/dark.css</file>
+        <file alias="dark_testnet">res/dark/css/testnet.css</file>
+        <file alias="dark_preprod">res/dark/css/preprod.css</file>
     </qresource>
 
     <qresource prefix="/images">
         <file alias="about">res/images/about.png</file>
         <file alias="axel_logo_horizontal">res/images/axel_logo_horizontal.png</file>
+        <file alias="axel_logo_horizontal_testnet">res/images/axel_logo_horizontal_testnet.png</file>
+        <file alias="axel_logo_horizontal_preprod">res/images/axel_logo_horizontal_preprod.png</file>
         <file alias="frame_blue">res/images/frame_blue.png</file>
         <file alias="downArrow">res/images/downArrow.png</file>
         <file alias="downArrow_small">res/images/downArrow_small.png</file>
@@ -151,6 +181,8 @@
     <qresource prefix="/images_dark">
         <file alias="about">res/dark/images/about.png</file>
         <file alias="axel_logo_horizontal">res/dark/images/axel_logo_horizontal.png</file>
+        <file alias="axel_logo_horizontal_testnet">res/dark/images/axel_logo_horizontal_testnet.png</file>
+        <file alias="axel_logo_horizontal_preprod">res/dark/images/axel_logo_horizontal_preprod.png</file>
         <file alias="frame_blue">res/dark/images/frame_blue.png</file>
         <file alias="downArrow">res/dark/images/downArrow.png</file>
         <file alias="downArrow_small">res/dark/images/downArrow_small.png</file>

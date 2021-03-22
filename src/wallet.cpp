@@ -46,6 +46,7 @@ bool fPayAtLeastCustomFee = true;
  * Override with -mintxfee
  */
 CFeeRate CWallet::minTxFee = CFeeRate(10000);
+CFeeRate CWallet::minTxFee2020 = CFeeRate(521000);
 
 /** @defgroup mapWallet
  *
@@ -1083,8 +1084,10 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         // In either case, we need to get the destination address
         CTxDestination address;
         if (!ExtractDestination(txout.scriptPubKey, address)) {
-            LogPrint("tx", "CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
-                this->GetHash().ToString());
+            if (!IsCoinStake() && !IsCoinBase()) {
+                LogPrint("tx", "CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
+                    this->GetHash().ToString());
+            }
             address = CNoDestination();
         }
 
@@ -1851,11 +1854,18 @@ struct CompareByPriority {
 
 CFeeRate CWallet::SelectMinTxFee()
 {
-    return minTxFee;
+    if (chainActive.Height() >= GetSporkValue(SPORK_13_MIN_TX_FEE_2020)) {
+        return minTxFee2020;
+    }
+    else
+    {
+        return minTxFee;
+    }
 }
 
 bool CWallet::SetMinTxFee(CFeeRate rate)
 {
+    minTxFee2020 = rate;
     minTxFee = rate;
     return true;
 }
@@ -2500,20 +2510,39 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     // Calculate reward
     const CBlockIndex* pIndex0 = chainActive.Tip();
 
-    nCredit += GetBlockValue(pIndex0->nHeight) + nFees;
-
     //Masternode payment
-    CAmount MnDevFund;
+    CAmount MnDevFund = 0;
     CAmount mnblock_value = GetBlockValue(chainActive.Height()) + nFees;
-    MnDevFund = masternodePayments.FillBlockPayee(txNew, mnblock_value, true);
+    CAmount FixedAddrValue = 0;
 
-    nCredit -= MnDevFund;
+    MnDevFund = masternodePayments.FillBlockPayee(txNew, GetBlockValue(chainActive.Height()), nFees, true);
+    if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) {
+        FixedAddrValue = GetBlockValue(chainActive.Height()) + nFees - MnDevFund;
+    }
+    else{
+        nCredit += GetBlockValue(pIndex0->nHeight) + nFees - MnDevFund;
+    }
+
     //presstab HyperStake - calculate the total size of our new output including the stake reward so that we can use it to decide whether to split the stake outputs
     if (nCredit / 2 > nStakeSplitThreshold * COIN) {
         txNew.vout[1].nValue = (nCredit / 2 / CENT) * CENT;
         txNew.vout.push_back(CTxOut(nCredit - txNew.vout[1].nValue, txNew.vout[1].scriptPubKey));
     } else {
         txNew.vout[1].nValue = nCredit;
+    }
+
+    if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)
+        && FixedAddrValue > 0){
+        std::string strAddr = GetAxelFixedAddr(chainActive.Height());
+        CBitcoinAddress address = CBitcoinAddress(strAddr);
+        if (address.IsValid()){
+            LogPrintf("Add %s,%s to vout\n", address.ToString(), FormatMoney(FixedAddrValue).c_str());
+            CScript scriptPubKey = GetScriptForDestination(address.Get());
+            txNew.vout.push_back(CTxOut(FixedAddrValue, scriptPubKey));
+        }
+        else{
+            LogPrintf("address [%s] is not valid\n", address.ToString());
+        }
     }
 
     // Sign

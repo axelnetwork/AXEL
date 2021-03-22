@@ -28,11 +28,12 @@ public:
     int RPCPort() const { return nRPCPort; }
 
 protected:
-    CBaseChainParams() {}
+    CBaseChainParams() { fPreProduction = false; }
 
     int nRPCPort;
     std::string strDataDir;
     Network networkID;
+    bool fPreProduction; // It can be set as "true" only in "mainnet" mode
 };
 
 /**

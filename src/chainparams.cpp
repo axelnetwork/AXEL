@@ -69,12 +69,14 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
         (531645, uint256("0226c3a2523774be53a1bceef48e5c13b1bdd7081faff97a5e8793b96fbfe735"))
         (560123, uint256("8dfcea9334c53363150a987e7edb251fa5ef22fe9496626e0c598dc09db7dec5"))
         (592871, uint256("c657dedd3a1685d730ce1a15e591db79a798221ec02d70bf2c8fc0086cc2fc1d"))
+        (784965, uint256("98281f5188b2abb99b5735ef59f965735a09d349865c473c3c3a15bc4dcc1131"))
+        (850210, uint256("e301faf519893eff7a531cab010339702cdd89ab693a55210bbc90312a9d398c"))
     ;
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1599031526,    // www.epochconverter.com
-    1393215,
+    1614672840,    // www.epochconverter.com
+    1963548,
     2000
     // 1549526525, // * UNIX timestamp of last checkpoint block
     // 0,          // * total number of transactions between genesis and last checkpoint
@@ -82,11 +84,34 @@ static const Checkpoints::CCheckpointData data = {
     // 500        // * estimated number of transactions per day after checkpoint
 };
 
+static Checkpoints::MapCheckpoints mapCheckpointsPreProd = boost::assign::map_list_of(0, uint256("0x001"));
+static const Checkpoints::CCheckpointData dataPreProd = {&mapCheckpointsPreProd, 1549526523, 0, 250};
+
 static Checkpoints::MapCheckpoints mapCheckpointsTestnet = boost::assign::map_list_of(0, uint256("0x001"));
 static const Checkpoints::CCheckpointData dataTestnet = {&mapCheckpointsTestnet, 1549526525, 0, 250};
 
 static Checkpoints::MapCheckpoints mapCheckpointsRegtest = boost::assign::map_list_of(0, uint256("0x001"));
 static const Checkpoints::CCheckpointData dataRegtest = {&mapCheckpointsRegtest, 1549526525, 0, 0};
+
+static MapBlockAddr data_mainnet_axel_addrs[] =
+{
+    {591001, "AJqKEMxivxkJ3gywXvYAjh9iZ75kUH3Lik"},
+    {634201, "AYYB39pj7aHciBJk6ML586u5PPqWUA2dqh"},
+    {677401, "AZPnB44JLDovWHhgnhrCHu5nt6m9TerNZu"},
+    {720601, "ASuUTnCDEHyaJTMxu5rjX1ZFPhJ33ZkrAE"},
+    {763801, "AV7j1P49x8Yo8p2rQ2JFxJDd8LM7DByjLa"},
+    {807001, "AKHHwC7C1jPWaQuZ3zFRnb7hd2LD1vQPYQ"}
+};
+
+static MapBlockAddr data_testnet_axel_addrs[] =
+{
+    {370000, "acnZjGJ91Fvzs6uKT438ejFACk8uYUxcWr"},
+    {395000, "am59NM8MsQLBQHuRimneVy4zYdrRpTU1ow"},
+    {400000, "aj4JYVt5uAQaKCo3ocoYCC9HL96gmkjJzX"},
+};
+
+static AXELFixedAddrs mainnetAxelFixedAddrs = {data_mainnet_axel_addrs, sizeof(data_mainnet_axel_addrs) / sizeof(MapBlockAddr)};
+static AXELFixedAddrs testnetAxelFixedAddrs = {data_testnet_axel_addrs, sizeof(data_testnet_axel_addrs) / sizeof(MapBlockAddr)};
 
 class CMainParams : public CChainParams
 {
@@ -147,16 +172,23 @@ public:
         assert(genesis.hashMerkleRoot == uint256("67d2e8a156a26373a9b96b406d5cef6b03e39071f05b0786fd376785f096ada7"));
         assert(hashGenesisBlock == uint256("000003d2dd01c2fa11ffbaf07a20ce4f966a76ce2a209412a60ecba138d99b5e"));
 
-        vSeeds.push_back(CDNSSeedData("", "45.76.62.42"));       // amn1001.axel.network
-        vSeeds.push_back(CDNSSeedData("", "104.207.151.24"));    // amn1002.axel.network
-        vSeeds.push_back(CDNSSeedData("", "78.141.206.123"));    // amn1003.axel.network
-        vSeeds.push_back(CDNSSeedData("", "95.179.255.98"));     // amn1004.axel.network
-        vSeeds.push_back(CDNSSeedData("", "139.180.168.62"));    // amn1005.axel.network
-        vSeeds.push_back(CDNSSeedData("", "167.179.76.55"));     // amn1006.axel.network
-        vSeeds.push_back(CDNSSeedData("", "66.42.55.200"));      // amn1007.axel.network
-        vSeeds.push_back(CDNSSeedData("", "155.138.132.181"));   // amn1008.axel.network
-        vSeeds.push_back(CDNSSeedData("", "45.63.38.177"));      // amn1009.axel.network
-        vSeeds.push_back(CDNSSeedData("", "95.179.180.214"));    // amn1010.axel.network
+        vSeeds.push_back(CDNSSeedData("", "45.76.62.42"));       // amn1001
+        vSeeds.push_back(CDNSSeedData("", "104.207.151.24"));    // amn1002
+        vSeeds.push_back(CDNSSeedData("", "80.240.30.64"));      // amn1006
+        vSeeds.push_back(CDNSSeedData("", "45.76.226.76"));      // amn1048
+        vSeeds.push_back(CDNSSeedData("", "149.248.36.198"));    // amn1049
+        vSeeds.push_back(CDNSSeedData("", "149.28.168.213"));    // amn1050
+        vSeeds.push_back(CDNSSeedData("", "155.138.132.216"));   // amn1051
+        vSeeds.push_back(CDNSSeedData("", "199.247.18.97"));     // amn1052
+        vSeeds.push_back(CDNSSeedData("", "78.141.202.9"));      // amn1053
+        vSeeds.push_back(CDNSSeedData("", "155.138.147.51"));    // amn1054
+        vSeeds.push_back(CDNSSeedData("", "45.76.35.243"));      // amn1055
+        vSeeds.push_back(CDNSSeedData("", "140.82.53.237"));     // amn1070
+        vSeeds.push_back(CDNSSeedData("", "207.246.120.157"));   // amn1078
+        vSeeds.push_back(CDNSSeedData("", "45.63.86.97"));       // amn1080
+        vSeeds.push_back(CDNSSeedData("", "149.28.133.231"));    // amn1084
+        vSeeds.push_back(CDNSSeedData("", "95.179.203.195"));    // amn1085
+        vSeeds.push_back(CDNSSeedData("", "139.180.168.187"));   // amn1179
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 23); // A
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 75); // X
@@ -185,11 +217,52 @@ public:
         vGMPubKey = ParseHex("04fed4284f0e493cb41b389b9d262066c05edd5f524b64ea2ee6d7b8aa0658f67ff98df15895e0cae5702ab31712da0453f50e931dc1c1bc5d1eba88d09d20b5b3");
         strSporkKey = "048563419991ec5e3566a0b6fd067bd65912a491363986c4ea447662c6fe449698aca198fe0c3fbbec6da98971e77e96ac9463a85dbe4f2a30275cdeba0ac99855";
         strObfuscationPoolDummyAddress = "ANYmoiCwjMaEtrBu5RefFqpDrK64hMKsSp";
+
+        pAxelFixedAddrs = &mainnetAxelFixedAddrs;
     }
 
     const Checkpoints::CCheckpointData& Checkpoints() const
     {
-        return data;
+        return (!fPreProduction)? data : dataPreProd;
+    }
+
+    const void SetAsPreProduction()
+    {
+        if (!fPreProduction) {
+            fPreProduction = true;
+
+            vFixedSeeds.clear();
+            vSeeds.clear();
+            //mapCheckpoints.clear();
+            pchMessageStart[0] = 0x43;
+            pchMessageStart[1] = 0x32;
+            pchMessageStart[2] = 0x25;
+            pchMessageStart[3] = 0x52;
+            nDefaultPort = 34323;
+
+            // https://www.newsbtc.com/2019/02/07/axel-launches-a-global-decentralized-network-harnessing-the-potential-of-masternode-technology/
+            const char* pszTimestamp = "AXEL @  Aug 25 2020: a rev0lu+iVonary new decentral1z@d & distribut@d NETVV0RK";
+            CMutableTransaction txNew;
+            txNew.vin.resize(1);
+            txNew.vout.resize(1);
+            txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+            txNew.vout[0].nValue = 0 * COIN;
+            txNew.vout[0].scriptPubKey = CScript() << ParseHex("04fed4284f0e493cb41b389b9d262066c05edd5f524b64ea2ee6d7b8aa0658f67ff98df15895e0cae5702ab31712da0453f50e931dc1c1bc5d1eba88d09d20b5b3") << OP_CHECKSIG;
+            txNew.blob = "Genesis Tx";
+            genesis.vtx.clear();
+            genesis.vtx.push_back(txNew);
+            genesis.hashPrevBlock = 0;
+            genesis.hashMerkleRoot = genesis.BuildMerkleTree();
+            genesis.nVersion = 1;
+            genesis.nTime = 1598326080; // Thu, 25 Aug 2002 03:28:00 GMT
+            genesis.nBits = 504365040;
+            genesis.nNonce = 0x2f95b;  // 545649;
+
+            hashGenesisBlock = genesis.GetHash();
+
+            assert(genesis.hashMerkleRoot == uint256("b2dd71b74d43796f5dcc42bf57306665d43e5cb6ca79f869a186fe1e84ccf9ec"));
+            assert(hashGenesisBlock == uint256("0000058eaf0917fe4f13c6db7138370c25bc824582c0de6c0a1e0b571f41c765"));
+        }
     }
 };
 static CMainParams mainParams;
@@ -257,6 +330,8 @@ public:
         vGMPubKey = ParseHex("0414b78fd29848ca55bacabe49c6bf53c8cb5224cdd84590f21616457c564b01d2c26c69fea8a55b5e336cb40981ba3167b04ddd149a21f59ab07cf30a4b7285b1");
         strSporkKey = "04f37f823b3e722f30b1f83ee41f2feba43ebee9576f04c0baadee2275b5a308bbe6947c2c7ff0d44e274a03e502985e50bd2ce9b19e781ac66ef4202758b8c498";
         strObfuscationPoolDummyAddress = "ANYmoiCwjMaEtrBu5RefFqpDrK64hMKsSp";
+
+        pAxelFixedAddrs = &testnetAxelFixedAddrs;
 
     }
     const Checkpoints::CCheckpointData& Checkpoints() const
@@ -397,6 +472,9 @@ bool SelectParamsFromCommandLine()
     CBaseChainParams::Network network = NetworkIdFromCommandLine();
     if (network == CBaseChainParams::MAX_NETWORK_TYPES)
         return false;
+
+    bool fPreProd = GetBoolArg("-preprod", false);
+    if (fPreProd) mainParams.SetAsPreProduction();
 
     SelectParams(network);
     return true;

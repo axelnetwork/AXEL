@@ -29,6 +29,9 @@
 #include <boost/assign/list_of.hpp>
 
 #include <univalue.h>
+#include "resck.h"
+#include "resckparam.h"
+extern CResParam resckparam;
 
 using namespace boost;
 using namespace boost::assign;
@@ -264,6 +267,144 @@ UniValue spork(const UniValue& params, bool fHelp)
         "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active"
         "<value> is a epoch datetime to enable or disable spork" +
         HelpRequiringPassphrase());
+}
+
+UniValue signmncollateral(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 4)
+        throw runtime_error(
+            "signmncollateral \"mnaddress\" \"txid\" \"tx_output\" \"auth_level\"\n"
+            "\nReturn signature.\n"
+            "\nArguments:\n"
+            "1. \"axeladdress\"     (string, required) The Masternode address to validate\n"
+            "2. \"txid\"            (string, required) Transaction ID\n"
+            "3. \"tx_output\"       (numeric, required) Transaction output\n"
+            "4. \"auth_level\"       (numeric, required) Authorization level (1 | 2)\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"signature\" : \"signature\", (string) The signature which signed by sporkkey\n"
+            "  \"level\" : \"1 | 2 | 3 | 4\", (string) which level the collateral is.\n"
+            "}\n"
+            "\nExamples:\n" +
+            HelpExampleCli("signmncollateral",
+                           "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\" \"2baf3ea9a616ed0f4537700131549ca62510afb4d4961dd749b8077ba6302eee\" 0 1") +
+            HelpExampleRpc("signmncollateral",
+                           "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\" \"2baf3ea9a616ed0f4537700131549ca62510afb4d4961dd749b8077ba6302eee\" 0 1"));
+
+    std::string mnAddr = params[0].get_str();
+    std::string strTXid = params[1].get_str();
+    uint256 hash(strTXid);
+    //uint256 hash = ParseHashV(params[1], "parameter 2");
+    int output = params[2].get_int();
+    int auth_level = (unsigned char)(params[3].get_int());
+
+    CTransaction tx;
+    uint256 hashBlock = 0;
+
+    CBitcoinAddress address(mnAddr);
+    bool isValid = address.IsValid();
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Masternode address is invalid");
+
+    if (!GetTransaction(hash, tx, hashBlock, true))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+
+    //check if it isn't spent.
+    if (output >= tx.vout.size())
+        throw JSONRPCError(RPC_TRANSACTION_ERROR, "transaction output out of range");
+
+    //COutPoint vout(hash, output);
+    CCoinsView dummy;
+    CCoinsViewCache view(&dummy);
+    {
+        LOCK(mempool.cs);
+        CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
+        view.SetBackend(viewMemPool);
+        const CCoins* coins = view.AccessCoins(hash);
+        if (!coins || !coins->IsAvailable(output)) {
+            throw JSONRPCError(RPC_TRANSACTION_ERROR, "inputs already spent");
+        }
+    }
+
+    //check which level the collateral is
+    unsigned level = CMasternode::Level(tx.vout[output].nValue, chainActive.Height());
+    if (!level)
+        throw JSONRPCError(RPC_TRANSACTION_ERROR, "error amount.");
+
+    std::vector<unsigned char> vchSigAuth;
+    std::string errorMessage;
+    CMasternodeAuth auth(mnAddr, COutPoint(hash, output), auth_level);
+    if (!auth.Sign(vchSigAuth, errorMessage))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, errorMessage);
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("level", level));
+    ret.push_back(Pair("signature", HexStr(vchSigAuth)));
+    return ret;
+}
+
+/*
+    Used for updating/reading notify settings on the network
+*/
+UniValue notify(const UniValue& params, bool fHelp)
+{
+    if (params.size() == 1 && params[0].get_str() == "show") {
+        UniValue ret(UniValue::VOBJ);
+        for (const CNotifyDef& notifyDef : notifyDefs) {
+            ret.push_back(Pair(notifyDef.name, resckparam.ParseVNotifyInternalMsgToString(GetNotifyValue(notifyDef.notifyId))));
+        }
+        return ret;
+    } else if (params.size() == 1 && params[0].get_str() == "active") {
+        UniValue ret(UniValue::VOBJ);
+        for (const CNotifyDef& notifyDef : notifyDefs) {
+            ret.push_back(Pair(notifyDef.name, IsNotifyActive(notifyDef.notifyId)));
+        }
+        return ret;
+    } else if (params.size() == 2) {
+        int nNotifyID = sporkManager.GetNotifyIDByName(params[0].get_str());
+        if (nNotifyID == -1) {
+            return "Invalid notify name";
+        }
+
+        if(nNotifyID == NOTIFY_1_RESCKPARAM)
+        {
+            // NOTIFY VALUE
+            string strValue = params[1].get_str();
+            std::vector<CNotifyInternalMsg> vValue = resckparam.ParseStringToVNotifyInternalMsg(strValue);
+            if(vValue.empty()) {
+                return "Invalid notify index or message value";
+            }
+
+            //broadcast new notify
+            if (sporkManager.UpdateNotify(nNotifyID, vValue)) {
+                ExecuteNotify(mapNotifysActive[nNotifyID]);
+                return "success";
+            } else {
+                return "failure";
+            }
+        } else {
+            return "not supported notify ID";
+        }
+    }
+
+    throw runtime_error(
+        "notify <name> [<value>]\n"
+        "<name> is the corresponding notify name, or 'show' to show all current notify settings, active to show which notifys are active"
+        "<value> is a string to enable or disable notify" +
+        HelpRequiringPassphrase());
+}
+
+/*
+    Used for take a resource test for a machine
+*/
+UniValue restest(const UniValue& params, bool fHelp)
+{
+    if (fHelp || (params.size() != 0))
+        throw runtime_error(
+            "restest\n"
+            "\ntake a resource test for this machine\n");
+    CResCker rescker;
+    return rescker.ResTest();
 }
 
 UniValue validateaddress(const UniValue& params, bool fHelp)

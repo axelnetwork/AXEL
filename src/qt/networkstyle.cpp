@@ -17,7 +17,8 @@ static const struct {
     const char* splashImage;
 } network_styles[] = {
     {"main", QAPP_APP_NAME_DEFAULT, ":/icons/axel", "", ":/images/splash"},
-    {"test", QAPP_APP_NAME_TESTNET, ":/icons/axel_testnet", QT_TRANSLATE_NOOP("SplashScreen", "[testnet]"), ":/images/splash_testnet"},
+    {"main-pre-prod", QAPP_APP_NAME_PRE_POROD, ":/icons/axel", QT_TRANSLATE_NOOP("SplashScreen", "[preprod-net]"), ":/images/splash"},
+    {"test", QAPP_APP_NAME_TESTNET, ":/icons/axel_testnet", QT_TRANSLATE_NOOP("SplashScreen", "[dev-net]"), ":/images/splash_testnet"},
     {"regtest", QAPP_APP_NAME_TESTNET, ":/icons/axel_testnet", "[regtest]", ":/images/splash_testnet"}};
 static const unsigned network_styles_count = sizeof(network_styles) / sizeof(*network_styles);
 

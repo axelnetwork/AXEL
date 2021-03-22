@@ -83,6 +83,7 @@ int64_t nReserveBalance = 0;
  * so it's still 10 times lower comparing to bitcoin.
  */
 CFeeRate minRelayTxFee = CFeeRate(10000);
+CFeeRate minRelayTxFee2020 = CFeeRate(521000);
 
 CTxMemPool mempool(SelectMinRelayTxFee());
 
@@ -1750,6 +1751,25 @@ double ConvertBitsToDouble(unsigned int nBits)
     return dDiff;
 }
 
+std::string GetAxelFixedAddr(int block_height)
+{
+    int j = 0;
+    AXELFixedAddrs *AxelAddr = Params().AxelFixedAddressList();
+    MapBlockAddr *mapBA = AxelAddr->mapBA;
+
+    if (AxelAddr->size <= 0) return "";
+
+    for (int i = 0; i < AxelAddr->size; i++)
+    {
+        int begin = mapBA[i].begin;
+        if (block_height < begin)
+            break;
+        j = i;
+    }
+
+    return mapBA[j].addr;
+}
+
 CAmount GetBlockValue(int nHeight)
 {
     // anti instamine
@@ -1759,9 +1779,31 @@ CAmount GetBlockValue(int nHeight)
         nSubsidy = 1500000 * COIN;
     }
     else {
-        nSubsidy = 15 * COIN;
+        if(GetSporkValue(SPORK_12_OP_BLOCK_REWARD_2020) > 0
+            && nHeight >= (GetSporkValue(SPORK_12_OP_BLOCK_REWARD_2020) - 1)) {
+            if (nHeight < 929404) {
+                nSubsidy = 15 * COIN;
+            }
+            else if (nHeight < 3429404) {
+                nSubsidy = 20 * COIN;
+            }
+            else if(nHeight < 5096071) {
+                nSubsidy = 30 * COIN;
+            }
+            else if(nHeight < 6346071) {
+                nSubsidy = 40 * COIN;
+            }
+            else if(nHeight < 7346070) {
+                nSubsidy = 50 * COIN;
+            }
+            else {
+                nSubsidy = 60 * COIN;
+            }
+        }
+        else {
+            nSubsidy = 15 * COIN;
+        }
     }
-
 
     // Check if we reached the coin max supply.
     int64_t nMoneySupply = chainActive.Tip()->nMoneySupply;
@@ -1775,49 +1817,101 @@ CAmount GetBlockValue(int nHeight)
     return nSubsidy;
 }
 
+bool MnReword2020Enabled()
+{
+    return (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020));
+}
+
 int64_t GetMasternodeCollateral(unsigned mnlevel)
 {
-    switch (mnlevel)
-    {
-        case 1:
-            return 1000000;
-        case 2:
-            return 50000;
-        case 3:
-            return 5000;
+    if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) {
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 1000000;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 50000;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 5555;
+            case CMasternode::LevelValue::LEVEL_4:
+                return 5000;
+        }
     }
-
+    else{
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 1000000;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 50000;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 5000;
+        }
+    }
     return 0;
 }
 
 double GetMasternodeRewardProportion(unsigned mnlevel)
 {
-    switch (mnlevel)
-    {
-        case 1:
-            return 0.08;
-        case 2:
-            return 0.59;
-        case 3:
-            return 0.13;
-        default:
-            return 0.0;
+    // active the new masternode distribution
+    if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) {
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 0.4904;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 0.3999;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 0.0953;
+            case CMasternode::LevelValue::LEVEL_4:
+                return 0.0143;
+        }
     }
+    else{
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 0.08;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 0.59;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 0.13;
+            case CMasternode::LevelValue::LEVEL_4:
+                return 0.0;
+        }
+    }
+    return 0.0;
 }
 
 double GetMasternodeBlockFeeProportion(unsigned mnlevel)
 {
-    switch (mnlevel)
-    {
-        case 1:
-            return 0.08;
-        case 2:
-            return 0.59;
-        case 3:
-            return 0.13;
-        default:
-            return 0.0;
+    if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) {
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 0.3902;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 0.4878;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 0.122;
+            case CMasternode::LevelValue::LEVEL_4:
+                return 0.0;
+        }
     }
+    else {
+        switch (mnlevel)
+        {
+            case CMasternode::LevelValue::LEVEL_1:
+                return 0.08;
+            case CMasternode::LevelValue::LEVEL_2:
+                return 0.59;
+            case CMasternode::LevelValue::LEVEL_3:
+                return 0.13;
+            case CMasternode::LevelValue::LEVEL_4:
+                return 0.0;
+        }
+    }
+    return 0.0;
 }
 
 int64_t GetMasternodeFee(int nHeight, unsigned mnlevel, int64_t blockFee)
@@ -2678,11 +2772,18 @@ bool static ConnectTip(CValidationState& state, CBlockIndex* pindexNew, CBlock* 
 
 CFeeRate SelectMinRelayTxFee()
 {
-    return minRelayTxFee;
+    if (chainActive.Height() >= GetSporkValue(SPORK_13_MIN_TX_FEE_2020)) {
+        return minRelayTxFee2020 ;
+    }
+    else
+    {
+        return minRelayTxFee;
+    }
 }
 
 bool SetMinRelayTxFee(CFeeRate rate)
 {
+    minRelayTxFee2020 = rate;
     minRelayTxFee = rate;
     return true;
 }
@@ -4555,6 +4656,8 @@ bool static AlreadyHave(const CInv& inv)
         return mapTxLockVote.count(inv.hash);
     case MSG_SPORK:
         return mapSporks.count(inv.hash);
+    case MSG_NOTIFY:
+        return mapNotifys.count(inv.hash);
     case MSG_MASTERNODE_WINNER:
         if (masternodePayments.mapMasternodePayeeVotes.count(inv.hash)) {
             masternodeSync.AddedMasternodeWinner(inv.hash);
@@ -4562,13 +4665,43 @@ bool static AlreadyHave(const CInv& inv)
         }
         return false;
     case MSG_MASTERNODE_ANNOUNCE:
-        if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
-            masternodeSync.AddedMasternodeList(inv.hash);
+        if (!IsSporkActive(SPORK_15_MN_V2)) {
+            if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
+                masternodeSync.AddedMasternodeList(inv.hash);
+                return true;
+            }
+            return false;
+        }
+        else {
+            // Never handle this message once mnbv2 be actived
             return true;
         }
-        return false;
     case MSG_MASTERNODE_PING:
-        return mnodeman.mapSeenMasternodePing.count(inv.hash);
+        if (!IsSporkActive(SPORK_15_MN_V2)) {
+            return mnodeman.mapSeenMasternodePing.count(inv.hash);
+        }
+        else {
+            // Never handle this message once mnbv2 be actived
+            return true;
+        }
+    case MSG_MASTERNODE_PING_V2:
+        if (mnodeman.mapSeenMasternodePing.count(inv.hash)) {
+            CMasternodePing mnp = mnodeman.mapSeenMasternodePing[inv.hash];
+            return (mnp.mnpVer >= MASTERNODE_V2);
+        }
+        return false;
+    case MSG_MASTERNODE_ANNOUNCE_V2:
+        if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
+            CMasternodeBroadcast mnb = mnodeman.mapSeenMasternodeBroadcast[inv.hash];
+            if (mnb.mnbVer < MASTERNODE_V2){
+                return false;
+            }
+            else {
+                masternodeSync.AddedMasternodeList(inv.hash);
+                return true;
+            }
+        }
+        return false;
     }
     // Don't know what it is, just say we already got one
     return true;
@@ -4712,6 +4845,15 @@ void static ProcessGetData(CNode* pfrom)
                     pushed = true;
                 }
             }
+            if (!pushed && inv.type == MSG_NOTIFY) {
+                if (mapNotifys.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(2000);
+                    ss << mapNotifys[inv.hash];
+                    pfrom->PushMessage("notify", ss);
+                    pushed = true;
+                }
+            }
 
             if (!pushed && inv.type == MSG_MASTERNODE_WINNER) {
 
@@ -4730,8 +4872,23 @@ void static ProcessGetData(CNode* pfrom)
                 if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
                     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
                     ss.reserve(1000);
-                    ss << mnodeman.mapSeenMasternodeBroadcast[inv.hash];
+                    CMasternodeBroadcast mnb = mnodeman.mapSeenMasternodeBroadcast[inv.hash];//added
+                    mnb.mnbVer = MASTERNODE_V1;
+                    ss << mnb;
                     pfrom->PushMessage("mnb", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_MASTERNODE_ANNOUNCE_V2) {
+                if (mnodeman.mapSeenMasternodeBroadcast.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    CMasternodeBroadcast mnb = mnodeman.mapSeenMasternodeBroadcast[inv.hash];//added
+                    CMasternodeBroadcastV2 *mnbV2 = (CMasternodeBroadcastV2 *)&mnb;
+                    mnb.mnbVer = MASTERNODE_V2;
+                    ss << *mnbV2;
+                    pfrom->PushMessage("mnbv2", ss);
                     pushed = true;
                 }
             }
@@ -4742,6 +4899,18 @@ void static ProcessGetData(CNode* pfrom)
                     ss.reserve(1000);
                     ss << mnodeman.mapSeenMasternodePing[inv.hash];
                     pfrom->PushMessage("mnp", ss);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed && inv.type == MSG_MASTERNODE_PING_V2) {
+                if (mnodeman.mapSeenMasternodePing.count(inv.hash)) {
+                    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                    ss.reserve(1000);
+                    CMasternodePing mnp = mnodeman.mapSeenMasternodePing[inv.hash];
+                    CMasternodePingV2 *mnpV2 = (CMasternodePingV2 *)&mnp;
+                    ss << *mnpV2;
+                    pfrom->PushMessage("mnpv2", ss);
                     pushed = true;
                 }
             }

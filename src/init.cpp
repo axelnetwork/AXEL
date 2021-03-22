@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2019-2020 The AXEL Core developers
+// Copyright (c) 2019-2021 The AXEL Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -53,6 +53,9 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
+
+#include "resckparam.h"
+CResParam resckparam;//global CResParam
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
@@ -185,6 +188,7 @@ void PrepareShutdown()
 #endif
     StopNode();
     DumpMasternodes();
+    DumpNotify();
     UnregisterNodeSignals(GetNodeSignals());
 
 	// After everything has been shut down,, but before things get flushed, stop the threadGroup
@@ -449,6 +453,7 @@ std::string HelpMessage(HelpMessageMode mode)
     }
     strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
     strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
+    strUsage += HelpMessageOpt("-preprod", _("Use the pre-production main network."));
     strUsage += HelpMessageOpt("-litemode=<n>", strprintf(_("Disable all axel specific functionality (Masternodes, Obfuscation, SwiftX) (0-1, default: %u)"), 0));
 
 #ifdef ENABLE_WALLET
@@ -530,7 +535,7 @@ std::string LicenseInfo()
 	   "\n" +
      	   FormatParagraph(_("Copyright (C) 2018-2019 The esbcoin Core developers")) + "\n" +
            "\n" +
-           FormatParagraph(_("Copyright (C) 2019-2020 The AXEL Wallet Developers")) + "\n" +
+           FormatParagraph(_("Copyright (C) 2019-" STRINGIZE(COPYRIGHT_YEAR) " The AXEL Wallet Developers")) + "\n" +
            "\n" +
            FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
            "\n" +
@@ -979,77 +984,9 @@ bool AppInit2()
 
     int64_t nStart;
 
-// ********************************************************* Step 5: Backup wallet and verify wallet database integrity
+// ********************************************************* Step 5: Verify wallet database integrity
 #ifdef ENABLE_WALLET
     if (!fDisableWallet) {
-        filesystem::path backupDir = GetDataDir() / "backups";
-        if (!filesystem::exists(backupDir)) {
-            // Always create backup folder to not confuse the operating system's file browser
-            filesystem::create_directories(backupDir);
-        }
-        nWalletBackups = GetArg("-createwalletbackups", 10);
-        nWalletBackups = std::max(0, std::min(10, nWalletBackups));
-        if (nWalletBackups > 0) {
-            if (filesystem::exists(backupDir)) {
-                // Create backup of the wallet
-                std::string dateTimeStr = DateTimeStrFormat(".%Y-%m-%d-%H-%M", GetTime());
-                std::string backupPathStr = backupDir.string();
-                backupPathStr += "/" + strWalletFile;
-                std::string sourcePathStr = GetDataDir().string();
-                sourcePathStr += "/" + strWalletFile;
-                boost::filesystem::path sourceFile = sourcePathStr;
-                boost::filesystem::path backupFile = backupPathStr + dateTimeStr;
-                sourceFile.make_preferred();
-                backupFile.make_preferred();
-                if (boost::filesystem::exists(sourceFile)) {
-#if BOOST_VERSION >= 158000
-                    try {
-                        boost::filesystem::copy_file(sourceFile, backupFile);
-                        LogPrintf("Creating backup of %s -> %s\n", sourceFile, backupFile);
-                    } catch (boost::filesystem::filesystem_error& error) {
-                        LogPrintf("Failed to create backup %s\n", error.what());
-                    }
-#else
-                    std::ifstream src(sourceFile.string(), std::ios::binary);
-                    std::ofstream dst(backupFile.string(), std::ios::binary);
-                    dst << src.rdbuf();
-#endif
-                }
-                // Keep only the last 10 backups, including the new one of course
-                typedef std::multimap<std::time_t, boost::filesystem::path> folder_set_t;
-                folder_set_t folder_set;
-                boost::filesystem::directory_iterator end_iter;
-                boost::filesystem::path backupFolder = backupDir.string();
-                backupFolder.make_preferred();
-                // Build map of backup files for current(!) wallet sorted by last write time
-                boost::filesystem::path currentFile;
-                for (boost::filesystem::directory_iterator dir_iter(backupFolder); dir_iter != end_iter; ++dir_iter) {
-                    // Only check regular files
-                    if (boost::filesystem::is_regular_file(dir_iter->status())) {
-                        currentFile = dir_iter->path().filename();
-                        // Only add the backups for the current wallet, e.g. wallet.dat.*
-                        if (dir_iter->path().stem().string() == strWalletFile) {
-                            folder_set.insert(folder_set_t::value_type(boost::filesystem::last_write_time(dir_iter->path()), *dir_iter));
-                        }
-                    }
-                }
-                // Loop backward through backup files and keep the N newest ones (1 <= N <= 10)
-                int counter = 0;
-                BOOST_REVERSE_FOREACH (PAIRTYPE(const std::time_t, boost::filesystem::path) file, folder_set) {
-                    counter++;
-                    if (counter > nWalletBackups) {
-                        // More than nWalletBackups backups: delete oldest one(s)
-                        try {
-                            boost::filesystem::remove(file.second);
-                            LogPrintf("Old backup deleted: %s\n", file.second);
-                        } catch (boost::filesystem::filesystem_error& error) {
-                            LogPrintf("Failed to delete backup %s\n", error.what());
-                        }
-                    }
-                }
-            }
-        }
-
         if (GetBoolArg("-resync", false)) {
             uiInterface.InitMessage(_("Preparing for resync..."));
             // Delete the local blockchain folders to force a resync from scratch to get a consitent blockchain-state
@@ -1320,6 +1257,10 @@ bool AppInit2()
                 if (fReindex)
                     pblocktree->WriteReindexing(true);
 
+                // axel: load previous notifys if we have them.
+                uiInterface.InitMessage(_("Loading notifys..."));
+                sporkManager.LoadNotifysFromDB();
+
                 uiInterface.InitMessage(_("Loading block index..."));
                 string strBlockIndexError = "";
                 if (!LoadBlockIndex(strBlockIndexError)) {
@@ -1433,7 +1374,10 @@ bool AppInit2()
         DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
         if (nLoadWalletRet != DB_LOAD_OK) {
             if (nLoadWalletRet == DB_CORRUPT)
-                strErrors << _("Error loading wallet.dat: Wallet corrupted") << "\n";
+            {
+                strErrors << _("Error loading wallet.dat: Wallet corrupted 1") << "\n";
+                return InitError(strErrors.str());
+            }
             else if (nLoadWalletRet == DB_NONCRITICAL_ERROR) {
                 string msg(_("Warning: error reading wallet.dat! All keys read correctly, but transaction data"
                              " or address book entries might be missing or incorrect."));
@@ -1525,7 +1469,84 @@ bool AppInit2()
 #else  // ENABLE_WALLET
     LogPrintf("No wallet compiled in!\n");
 #endif // !ENABLE_WALLET
+
+// ********************************************************* Step 8-1: Backup wallet
+#ifdef ENABLE_WALLET
+    if (!fDisableWallet) {
+        filesystem::path backupDir = GetDataDir() / "backups";
+        if (!filesystem::exists(backupDir)) {
+            // Always create backup folder to not confuse the operating system's file browser
+            filesystem::create_directories(backupDir);
+        }
+        nWalletBackups = GetArg("-createwalletbackups", 10);
+        nWalletBackups = std::max(0, std::min(10, nWalletBackups));
+        if (nWalletBackups > 0) {
+            if (filesystem::exists(backupDir)) {
+                // Create backup of the wallet
+                std::string dateTimeStr = DateTimeStrFormat(".%Y-%m-%d-%H-%M", GetTime());
+                std::string backupPathStr = backupDir.string();
+                backupPathStr += "/" + strWalletFile;
+                std::string sourcePathStr = GetDataDir().string();
+                sourcePathStr += "/" + strWalletFile;
+                boost::filesystem::path sourceFile = sourcePathStr;
+                boost::filesystem::path backupFile = backupPathStr + dateTimeStr;
+                sourceFile.make_preferred();
+                backupFile.make_preferred();
+                if (boost::filesystem::exists(sourceFile)) {
+#if BOOST_VERSION >= 158000
+                    try {
+                        boost::filesystem::copy_file(sourceFile, backupFile);
+                        LogPrintf("Creating backup of %s -> %s\n", sourceFile, backupFile);
+                    } catch (boost::filesystem::filesystem_error& error) {
+                        LogPrintf("Failed to create backup %s\n", error.what());
+                    }
+#else
+                    std::ifstream src(sourceFile.string(), std::ios::binary);
+                    std::ofstream dst(backupFile.string(), std::ios::binary);
+                    dst << src.rdbuf();
+#endif
+                }
+                // Keep only the last 10 backups, including the new one of course
+                typedef std::multimap<std::time_t, boost::filesystem::path> folder_set_t;
+                folder_set_t folder_set;
+                boost::filesystem::directory_iterator end_iter;
+                boost::filesystem::path backupFolder = backupDir.string();
+                backupFolder.make_preferred();
+                // Build map of backup files for current(!) wallet sorted by last write time
+                boost::filesystem::path currentFile;
+                for (boost::filesystem::directory_iterator dir_iter(backupFolder); dir_iter != end_iter; ++dir_iter) {
+                    // Only check regular files
+                    if (boost::filesystem::is_regular_file(dir_iter->status())) {
+                        currentFile = dir_iter->path().filename();
+                        // Only add the backups for the current wallet, e.g. wallet.dat.*
+                        if (dir_iter->path().stem().string() == strWalletFile) {
+                            folder_set.insert(folder_set_t::value_type(boost::filesystem::last_write_time(dir_iter->path()), *dir_iter));
+                        }
+                    }
+                }
+                // Loop backward through backup files and keep the N newest ones (1 <= N <= 10)
+                int counter = 0;
+                BOOST_REVERSE_FOREACH (PAIRTYPE(const std::time_t, boost::filesystem::path) file, folder_set) {
+                    counter++;
+                    if (counter > nWalletBackups) {
+                        // More than nWalletBackups backups: delete oldest one(s)
+                        try {
+                            boost::filesystem::remove(file.second);
+                            LogPrintf("Old backup deleted: %s\n", file.second);
+                        } catch (boost::filesystem::filesystem_error& error) {
+                            LogPrintf("Failed to delete backup %s\n", error.what());
+                        }
+                    }
+                }
+            }
+        }
+     }
+#endif
+
     // ********************************************************* Step 9: import blocks
+
+    if (!CheckDiskSpace())
+        return false;
 
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
@@ -1551,16 +1572,45 @@ bool AppInit2()
 
     uiInterface.InitMessage(_("Loading masternode cache..."));
 
+    bool newMncasheflag = boost::filesystem::exists(GetDataDir() / "mncachev2.dat");
+    bool oldMncasheflag = boost::filesystem::exists(GetDataDir() / "mncache.dat");
     CMasternodeDB mndb;
-    CMasternodeDB::ReadResult readResult = mndb.Read(mnodeman);
-    if (readResult == CMasternodeDB::FileError)
-        LogPrintf("Missing masternode cache file - mncache.dat, will try to recreate\n");
-    else if (readResult != CMasternodeDB::Ok) {
-        LogPrintf("Error reading mncache.dat: ");
-        if (readResult == CMasternodeDB::IncorrectFormat)
-            LogPrintf("magic is ok but data has invalid format, will try to recreate\n");
-        else
-            LogPrintf("file format is unknown or invalid, please fix it manually\n");
+    if(newMncasheflag) {
+        CMasternodeDB::ReadResult readResult = mndb.Read(mnodeman,false,CLIENT_VERSION); //added
+        if (readResult == CMasternodeDB::FileError)
+            LogPrintf("Missing masternode cache file - mncachev2.dat, will try to recreate\n");
+        else if (readResult != CMasternodeDB::Ok) {
+            LogPrintf("Error reading mncachev2.dat: ");
+            if (readResult == CMasternodeDB::IncorrectFormat)
+                LogPrintf("magic is ok but data has invalid format, will try to recreate\n");
+            else
+                LogPrintf("file format is unknown or invalid, please fix it manually\n");
+        }
+    }
+    else if(oldMncasheflag) {
+        CMasternodeDB::ReadResult readResult = mndb.Read(mnodeman,false,CLIENT_VERSION-1); //added
+        if (readResult == CMasternodeDB::FileError)
+            LogPrintf("Missing masternode cache file - mncachev.dat, will try to recreate mncachev2.dat\n");
+        else if (readResult != CMasternodeDB::Ok) {
+            LogPrintf("Error reading mncachev2.dat: ");
+            if (readResult == CMasternodeDB::IncorrectFormat)
+                LogPrintf("magic is ok but data has invalid format, will try to recreate mncachev2.dat\n");
+            else
+                LogPrintf("file format is unknown or invalid\n");
+        }else{ //success
+            //write to new cache
+            LogPrintf("Writting info to mncachev2.dat...\n");
+            mndb.Write(mnodeman);
+            //delete old cache
+            LogPrintf("deleting mncache.dat...\n");
+            try {
+                boost::filesystem::path pathMN = GetDataDir() / "mncache.dat";
+                boost::filesystem::remove(pathMN);
+                LogPrintf("mncache.dat deleted\n");
+            } catch (boost::filesystem::filesystem_error& error) {
+                LogPrintf("Failed to delete mncache.dat %s\n", error.what());
+            }
+        }
     }
 
     fMasterNode = GetBoolArg("-masternode", false);
@@ -1670,9 +1720,6 @@ bool AppInit2()
     threadGroup.create_thread(boost::bind(&ThreadCheckObfuScationPool));
 
     // ********************************************************* Step 11: start node
-
-    if (!CheckDiskSpace())
-        return false;
 
     if (!strErrors.str().empty())
         return InitError(strErrors.str());

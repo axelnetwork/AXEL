@@ -210,6 +210,12 @@ void Bip38ToolDialog::on_importAddressButton_DEC_clicked()
         return;
     }
 
+    if (!key.IsValid()) {
+        ui->statusLabel_DEC->setStyleSheet("QLabel { color: red; }");
+        ui->statusLabel_DEC->setText(tr("Data Not Valid .") + QString(" ") + tr("Please follow the normal procedure. You should first enter the private key and decrypt it"));
+        return;
+    }
+
     CBitcoinAddress address(ui->addressOut_DEC->text().toStdString());
     CPubKey pubkey = key.GetPubKey();
 

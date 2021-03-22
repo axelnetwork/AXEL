@@ -337,7 +337,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 {
     QActionGroup* tabGroup = new QActionGroup(this);
 
-    overviewAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/overview")), "", this);
+    overviewAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/overview",true)), "", this);
     overviewAction->setStatusTip(tr("Show general overview of wallet"));
     overviewAction->setToolTip(overviewAction->statusTip());
     overviewAction->setCheckable(true);
@@ -348,7 +348,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 #endif
     tabGroup->addAction(overviewAction);
 
-    sendCoinsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/send")), "", this);
+    sendCoinsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/send",true)), "", this);
     sendCoinsAction->setStatusTip(tr("Send coins to a AXEL address"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
     sendCoinsAction->setCheckable(true);
@@ -359,7 +359,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 #endif
     tabGroup->addAction(sendCoinsAction);
 
-    receiveCoinsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/receiving_addresses")), "", this);
+    receiveCoinsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/receiving_addresses",true)), "", this);
     receiveCoinsAction->setStatusTip(tr("Request payments (generates QR codes and AXEL: URIs)"));
     receiveCoinsAction->setToolTip(receiveCoinsAction->statusTip());
     receiveCoinsAction->setCheckable(true);
@@ -370,7 +370,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 #endif
     tabGroup->addAction(receiveCoinsAction);
 
-    historyAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/history")), "", this);
+    historyAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/history",true)), "", this);
     historyAction->setStatusTip(tr("Browse transaction history"));
     historyAction->setToolTip(historyAction->statusTip());
     historyAction->setCheckable(true);
@@ -381,7 +381,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 #endif
     tabGroup->addAction(historyAction);
 
-    toolsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/tools")), "", this);
+    toolsAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/tools",true)), "", this);
     toolsAction->setStatusTip(tr("Tools"));
     toolsAction->setToolTip(toolsAction->statusTip());
     toolsAction->setCheckable(true);
@@ -396,7 +396,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
 
     QSettings settings;
     if (settings.value("fShowMasternodesTab").toBool()) {
-        masternodeAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/masternodes")), "", this);
+        masternodeAction = new QAction(QIcon(GUIUtil::getThemeImage(":/icons/masternodes",true)), "", this);
         masternodeAction->setStatusTip(tr("Browse masternodes"));
         masternodeAction->setToolTip(masternodeAction->statusTip());
         masternodeAction->setCheckable(true);

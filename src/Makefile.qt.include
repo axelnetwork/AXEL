@@ -498,6 +498,7 @@ qt_axel_qt_LDADD = qt/libbitcoinqt.a $(LIBBITCOIN_SERVER)
 if ENABLE_WALLET
 qt_axel_qt_LDADD += $(LIBBITCOIN_WALLET)
 endif
+qt_axel_qt_LDADD += $(LIBAXEL_RESCK)
 if ENABLE_ZMQ
 qt_axel_qt_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
 endif

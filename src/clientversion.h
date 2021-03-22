@@ -14,9 +14,9 @@
  */
 
 //! These need to be macros, as clientversion.cpp's and axel*-res.rc's voodoo requires it
-#define CLIENT_VERSION_MAJOR 2
+#define CLIENT_VERSION_MAJOR 3
 #define CLIENT_VERSION_MINOR 0
-#define CLIENT_VERSION_REVISION 2
+#define CLIENT_VERSION_REVISION 0
 #define CLIENT_VERSION_BUILD 0
 
 //! Set to true for release, false for prerelease or test build
@@ -26,7 +26,7 @@
  * Copyright year (2009-this)
  * Todo: update this when changing our copyright comments in the source
  */
-#define COPYRIGHT_YEAR 2020
+#define COPYRIGHT_YEAR 2021
 
 #endif //HAVE_CONFIG_H
 
@@ -38,7 +38,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers, 2014-" STRINGIZE(COPYRIGHT_YEAR) " The Dash Core Developers, 2015-" STRINGIZE(COPYRIGHT_YEAR) " The PIVX Core Developers, 2017-" STRINGIZE(COPYRIGHT_YEAR) " The Bulwark developers, 2018-" STRINGIZE(COPYRIGHT_YEAR) " The esbcoin Core developers, 2019-" STRINGIZE(COPYRIGHT_YEAR) " The AXEL Wallet Developers"
+#define COPYRIGHT_STR "2009-2014 The Bitcoin Core Developers, 2014-2015 The Dash Core Developers, 2015-2017 The PIVX Core Developers, 2017-2018 The Bulwark developers, 2018-2019 The esbcoin Core developers, 2019-" STRINGIZE(COPYRIGHT_YEAR) " The AXEL Wallet Developers"
 
 /**
  * axeld-res.rc includes this file, but it cannot cope with real c++ code.

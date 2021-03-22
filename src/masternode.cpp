@@ -13,7 +13,7 @@
 #include "spork.h"
 
 #include <boost/lexical_cast.hpp>
-
+#include "resck.h"
 // cache block hashes as we calculate them
 std::map<int64_t, uint256> mapCacheBlockHashes;
 
@@ -72,6 +72,8 @@ CMasternode::CMasternode()
     protocolVersion = PROTOCOL_VERSION;
     nLastDsq = 0;
     lastTimeChecked = 0;
+    mnbVer = 0;//added
+    sigAuth = std::vector<unsigned char>();//added
 }
 
 CMasternode::CMasternode(const CMasternode& other)
@@ -92,6 +94,8 @@ CMasternode::CMasternode(const CMasternode& other)
     allowFreeTx = other.allowFreeTx;
     protocolVersion = other.protocolVersion;
     nLastDsq = other.nLastDsq;
+    mnbVer = other.mnbVer; //added
+    sigAuth = other.sigAuth;//added
     lastTimeChecked = 0;
 }
 
@@ -120,6 +124,8 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb)
     allowFreeTx = true;
     protocolVersion = mnb.protocolVersion;
     nLastDsq = mnb.nLastDsq;
+    mnbVer = mnb.mnbVer;//added
+    sigAuth = mnb.sigAuth;//added
     lastTimeChecked = 0;
 }
 
@@ -128,8 +134,12 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb)
 //
 bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb)
 {
-    if(mnb.sigTime <= sigTime)
+    if (!IsSporkActive(SPORK_15_MN_V2) && (mnb.sigTime < sigTime))
         return false;
+    else if (IsSporkActive(SPORK_15_MN_V2) && (mnb.sigTime <= sigTime))
+        return false;
+
+    bool fIgnoreSigTime = false;
 
     pubKeyMasternode = mnb.pubKeyMasternode;
     pubKeyCollateralAddress = mnb.pubKeyCollateralAddress;
@@ -138,8 +148,17 @@ bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb)
     protocolVersion = mnb.protocolVersion;
     addr = mnb.addr;
     lastTimeChecked = 0;
+    if (mnb.sigAuth.size() > 0) {
+        sigAuth = mnb.sigAuth;
+        fIgnoreSigTime = true;
+    }
+    if (mnb.mnbVer > mnbVer) {
+        fIgnoreSigTime = true;
+    }
+    mnbVer = mnb.mnbVer;
+
     int nDoS = 0;
-    if (mnb.lastPing == CMasternodePing() || (mnb.lastPing != CMasternodePing() && mnb.lastPing.CheckAndUpdate(nDoS, false))) {
+    if (mnb.lastPing == CMasternodePing() || (mnb.lastPing != CMasternodePing() && mnb.lastPing.CheckAndUpdate(nDoS, false, fIgnoreSigTime, true))) {
         lastPing = mnb.lastPing;
         mnodeman.mapSeenMasternodePing.insert(make_pair(lastPing.GetHash(), lastPing));
     }
@@ -312,11 +331,22 @@ bool CMasternode::IsValidNetAddr()
 unsigned CMasternode::Level(CAmount vin_val, int blockHeight)
 {
 	switch (vin_val) {
-        case 1000000 * COIN: return 1;
-        case 50000 * COIN: return 2;
-        case 5000 * COIN: return 3;
+        case 1000000 * COIN:
+            return CMasternode::LevelValue::LEVEL_1;
+        case 50000 * COIN:
+            return CMasternode::LevelValue::LEVEL_2;
+        case 5555 * COIN:
+            if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020))
+                return CMasternode::LevelValue::LEVEL_3;
+            else
+                return 0;
+        case 5000 * COIN:
+            if (chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020))
+                return CMasternode::LevelValue::LEVEL_4;
+            else
+                return CMasternode::LevelValue::LEVEL_3;
 	}
-    return 0;
+    return CMasternode::LevelValue::UNSPECIFIED;
 }
 
 unsigned CMasternode::Level(const CTxIn& vin, int blockHeight)
@@ -369,6 +399,14 @@ CMasternodeBroadcast::CMasternodeBroadcast()
     allowFreeTx = true;
     protocolVersion = PROTOCOL_VERSION;
     nLastDsq = 0;
+    mnbVer = 0;
+    sigAuth = std::vector<unsigned char>();
+}
+
+CMasternodeBroadcast::CMasternodeBroadcast(int mnvVerIn)
+{
+    CMasternodeBroadcast();
+    mnbVer = mnvVerIn;
 }
 
 CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn)
@@ -387,6 +425,28 @@ CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubK
     allowFreeTx = true;
     protocolVersion = protocolVersionIn;
     nLastDsq = 0;
+    mnbVer = 0;
+    sigAuth = std::vector<unsigned char>();
+}
+
+CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn, int mnvVerIn, std::vector<unsigned char> sigAuthIn)
+{
+    vin = newVin;
+    addr = newAddr;
+    pubKeyCollateralAddress = pubKeyCollateralAddressNew;
+    pubKeyMasternode = pubKeyMasternodeNew;
+    sig = std::vector<unsigned char>();
+    activeState = MASTERNODE_ENABLED;
+    sigTime = GetAdjustedTime();
+    lastPing = CMasternodePing();
+    cacheInputAge = 0;
+    cacheInputAgeBlock = 0;
+    unitTest = false;
+    allowFreeTx = true;
+    protocolVersion = protocolVersionIn;
+    nLastDsq = 0;
+    mnbVer = mnvVerIn;
+    sigAuth = sigAuthIn;
 }
 
 CMasternodeBroadcast::CMasternodeBroadcast(const CMasternode& mn)
@@ -405,6 +465,8 @@ CMasternodeBroadcast::CMasternodeBroadcast(const CMasternode& mn)
     allowFreeTx = mn.allowFreeTx;
     protocolVersion = mn.protocolVersion;
     nLastDsq = mn.nLastDsq;
+    mnbVer = mn.mnbVer;
+    sigAuth = mn.sigAuth;
 }
 
 bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast& mnbRet, bool fOffline)
@@ -518,13 +580,27 @@ bool CMasternodeBroadcast::CheckAndUpdate(int& nDos)
         return false;
     }
 
-    std::string vchPubKey(pubKeyCollateralAddress.begin(), pubKeyCollateralAddress.end());
-    std::string vchPubKey2(pubKeyMasternode.begin(), pubKeyMasternode.end());
-    std::string strMessage = addr.ToString() + boost::lexical_cast<std::string>(sigTime) + vchPubKey + vchPubKey2 + boost::lexical_cast<std::string>(protocolVersion);
+    std::string strMessage;
+    if (!BuildMessage(strMessage)){
+        LogPrintf("mnb - build message error.\n");
+        return false;
+    }
 
     if (protocolVersion < masternodePayments.GetMinMasternodePaymentsProto()) {
         LogPrintf("mnb - ignoring outdated Masternode %s protocol version %d\n", vin.prevout.hash.ToString(), protocolVersion);
         return false;
+    }
+
+    unsigned mnlevel = CMasternode::Level(vin, chainActive.Height());
+    bool needCheck = (mnlevel != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+    if (sigAuth.size() > 0) needCheck = true;
+    if (needCheck && IsSporkActive(SPORK_15_MN_V2)) {
+        std::string errorMessage;
+        CMasternodeAuth auth(sigAuth, pubKeyMasternode, vin.prevout);
+        if (!auth.CheckSignature(errorMessage)) {
+            LogPrintf("mnb -check auth signature failed. - %s\n", errorMessage);
+            return false;
+        }
     }
 
     CScript pubkeyScript;
@@ -563,7 +639,6 @@ bool CMasternodeBroadcast::CheckAndUpdate(int& nDos)
 
     //search existing Masternode list, this is where we update existing Masternodes with new mnb broadcasts
     CMasternode* pmn = mnodeman.Find(vin);
-
     // no such masternode, nothing to update
     if (!pmn)
         return true;
@@ -580,7 +655,10 @@ bool CMasternodeBroadcast::CheckAndUpdate(int& nDos)
 
     // mn.pubkey = pubkey, IsVinAssociatedWithPubkey is validated once below,
     //   after that they just need to match
-    if (pmn->pubKeyCollateralAddress == pubKeyCollateralAddress && !pmn->IsBroadcastedWithin(MASTERNODE_MIN_MNB_SECONDS)) {
+    if (pmn->pubKeyCollateralAddress == pubKeyCollateralAddress
+        && (!pmn->IsBroadcastedWithin(MASTERNODE_MIN_MNB_SECONDS)
+            || (mnbVer > pmn->mnbVer)
+            || (HexStr(pmn->sigAuth) != HexStr(sigAuth)))) {
         //take the newest entry
         LogPrint("masternode","mnb - Got updated entry for %s\n", vin.prevout.hash.ToString());
         if (pmn->UpdateFromNewBroadcast((*this))) {
@@ -696,16 +774,32 @@ void CMasternodeBroadcast::Relay()
     RelayInv(inv);
 }
 
-bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
+bool CMasternodeBroadcast::BuildMessage(std::string &strMessage)
 {
-    std::string errorMessage;
-
     std::string vchPubKey(pubKeyCollateralAddress.begin(), pubKeyCollateralAddress.end());
     std::string vchPubKey2(pubKeyMasternode.begin(), pubKeyMasternode.end());
 
+    if (sigTime <= GetSporkValue(SPORK_15_MN_V2)) {
+        strMessage = addr.ToString() + boost::lexical_cast<std::string>(sigTime) + vchPubKey + vchPubKey2 + boost::lexical_cast<std::string>(protocolVersion);
+    }
+    else {
+        std::string strSigAuth = HexStr(sigAuth.begin(), sigAuth.end());
+        strMessage = addr.ToString() + boost::lexical_cast<std::string>(sigTime) + vchPubKey + vchPubKey2 + boost::lexical_cast<std::string>(protocolVersion) + boost::lexical_cast<std::string>(mnbVer) + strSigAuth;
+    }
+    return true;
+}
+
+bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
+{
+    std::string errorMessage;
+    std::string strMessage;
+
     sigTime = GetAdjustedTime();
 
-    std::string strMessage = addr.ToString() + boost::lexical_cast<std::string>(sigTime) + vchPubKey + vchPubKey2 + boost::lexical_cast<std::string>(protocolVersion);
+    if (!BuildMessage(strMessage)){
+        LogPrintf("CMasternodeBroadcast::Sign() - build message error.\n");
+        return false;
+    }
 
     if (!obfuScationSigner.SignMessage(strMessage, errorMessage, sig, keyCollateralAddress)) {
         LogPrintf("CMasternodeBroadcast::Sign() - Error: %s\n", errorMessage);
@@ -720,12 +814,21 @@ bool CMasternodeBroadcast::Sign(CKey& keyCollateralAddress)
     return true;
 }
 
+void CMasternodeBroadcastV2::Relay()
+{
+    CInv invV2(MSG_MASTERNODE_ANNOUNCE_V2, GetHash());
+    RelayInv(invV2);
+}
+
 CMasternodePing::CMasternodePing()
 {
     vin = CTxIn();
     blockHash = uint256(0);
     sigTime = 0;
     vchSig = std::vector<unsigned char>();
+    clientVer = 0;
+    mnpVer = MASTERNODE_V1;
+    resSig = std::vector<unsigned char>();
 }
 
 CMasternodePing::CMasternodePing(CTxIn& newVin)
@@ -734,8 +837,22 @@ CMasternodePing::CMasternodePing(CTxIn& newVin)
     blockHash = chainActive[chainActive.Height() - 12]->GetBlockHash();
     sigTime = GetAdjustedTime();
     vchSig = std::vector<unsigned char>();
+    clientVer = 0;
+    mnpVer = MASTERNODE_V1;
+    resSig = std::vector<unsigned char>();
 }
 
+bool CMasternodePing::BuildMessage(std::string &strMessage)
+{
+    if (sigTime <= GetSporkValue(SPORK_15_MN_V2)) {
+        strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
+    }
+    else {
+        std::string strSig = HexStr(resSig.begin(), resSig.end());
+        strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime) + std::to_string(clientVer) + uid + strSig;
+    }
+    return true;
+}
 
 bool CMasternodePing::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
 {
@@ -743,7 +860,11 @@ bool CMasternodePing::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
     std::string strMasterNodeSignMessage;
 
     sigTime = GetAdjustedTime();
-    std::string strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
+    std::string strMessage;
+    if (!BuildMessage(strMessage)){
+        LogPrintf("CMasternodePing::Sign() - build message error.\n");
+        return false;
+    }
 
     if (!obfuScationSigner.SignMessage(strMessage, errorMessage, vchSig, keyMasternode)) {
         LogPrintf("CMasternodePing::Sign() - Error: %s\n", errorMessage);
@@ -758,7 +879,66 @@ bool CMasternodePing::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
     return true;
 }
 
-bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled)
+bool CMasternodePing::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode,int64_t signTimeIn)
+{
+    std::string errorMessage;
+    std::string strMasterNodeSignMessage;
+
+    sigTime = signTimeIn;
+    std::string strMessage;
+    if (!BuildMessage(strMessage)){
+        LogPrintf("CMasternodePing::Sign() - build message error.\n");
+        return false;
+    }
+
+    if (!obfuScationSigner.SignMessage(strMessage, errorMessage, vchSig, keyMasternode)) {
+        LogPrintf("CMasternodePing::Sign() - Error: %s\n", errorMessage);
+        return false;
+    }
+
+    if (!obfuScationSigner.VerifyMessage(pubKeyMasternode, vchSig, strMessage, errorMessage)) {
+        LogPrintf("CMasternodePing::Sign() - Error: %s\n", errorMessage);
+        return false;
+    }
+
+    return true;
+}
+
+bool CMasternodePing::VerifyRes(CPubKey& pubKeyMasternode, std::vector<unsigned char> sigAuth, bool fCheckUidEmpty)
+{
+    unsigned mnlevel = CMasternode::Level(vin, chainActive.Height());
+    bool needCheck = (mnlevel != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+    if (needCheck) {
+        CResCker rescker;
+        string strPubKeyMasternode = HexStr(pubKeyMasternode.GetHex());
+        string errorMessage;
+        if (fCheckUidEmpty && uid.empty()) {
+            LogPrintf("CMasternodePing::VerifyRes() - CheckUidEmpty not passed-tier is %d\n", mnlevel);
+            return false;
+        }
+
+        if (!uid.empty()) {
+            if (!rescker.VerifyCkRes(strPubKeyMasternode, vin.prevout.hash, vin.prevout.n, mnlevel, sigAuth, sigTime, uid, resSig, errorMessage)) {
+                LogPrintf("CMasternodePing::VerifyRes() - VerifyCkRes() not passed-tier is %d error: %s\n", mnlevel, errorMessage);
+                return false;
+            } else {
+                std::vector<CMasternode> vMasternodes = mnodeman.GetFullMasternodeVector();
+                for (CMasternode& mn : vMasternodes) {
+                    if (!mn.lastPing.uid.empty() && mn.lastPing.uid == uid && mn.vin != vin) {
+                        LogPrintf("CMasternodePing::VerifyRes() - VerifyCkRes() passed-tier is %d but duplicate resid %s | vin: %s\n", mnlevel, uid, vin.prevout.hash.ToString());
+                        return false;
+                    }
+                }
+
+                LogPrintf("CMasternodePing::VerifyRes - VerifyCkRes() passed-tier is %d\n", mnlevel);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgnoreSigTime, bool fNoRelay, bool fcheckUidEmpty)
 {
     if (sigTime > GetAdjustedTime() + 60 * 60) {
         LogPrintf("CMasternodePing::CheckAndUpdate - Signature rejected, too far into the future %s\n", vin.prevout.hash.ToString());
@@ -785,11 +965,44 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled)
     if (pmn != NULL && pmn->protocolVersion >= masternodePayments.GetMinMasternodePaymentsProto()) {
         if (fRequireEnabled && !pmn->IsEnabled()) return false;
 
+        if (IsSporkActive(SPORK_15_MN_V2) && (pmn->mnbVer == MASTERNODE_V1)) {
+            LogPrintf("CMasternodePing::CheckAndUpdate - mn version is V1 in current masternode list.\n");
+            return false;
+        }
+
+        bool needCheck = (pmn->Level() != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+        if (pmn->sigAuth.size() > 0) needCheck = true;
+        if (needCheck && IsSporkActive(SPORK_15_MN_V2)) {
+            std::string errorMessage;
+            CMasternodeAuth auth(pmn->sigAuth, pmn->pubKeyMasternode, vin.prevout);
+            if (!auth.CheckSignature(errorMessage)) {
+                LogPrintf("CMasternodePing::CheckAndUpdate - %s\n", errorMessage);
+                mnodeman.Remove(pmn->vin);
+                return false;
+            }
+            LogPrintf("CMasternodePing::CheckAndUpdate() - spork key auth signature success, auth level is %d\n", auth.GetLevel());
+        }
+
+        if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
+            if (!VerifyRes(pmn->pubKeyMasternode, pmn->sigAuth, fcheckUidEmpty)) {
+                if(sigTime > pmn->invalidPing.sigTime) {
+                    pmn->invalidPing = *this;
+                    if (!fNoRelay) Relay(); //still notify other nodes
+                }
+                return false;
+            }
+        }
+
+
         // LogPrintf("mnping - Found corresponding mn for vin: %s\n", vin.ToString());
         // update only if there is no known ping for this masternode or
         // last ping was more then MASTERNODE_MIN_MNP_SECONDS-60 ago comparing to this one
-        if (!pmn->IsPingedWithin(MASTERNODE_MIN_MNP_SECONDS - 60, sigTime)) {
-            std::string strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
+        if (fIgnoreSigTime || (!pmn->IsPingedWithin(MASTERNODE_MIN_MNP_SECONDS - 60, sigTime))) {
+            std::string strMessage;
+            if (!BuildMessage(strMessage)){
+                LogPrintf("CMasternodePing::CheckAndUpdate() - Build message error.\n");
+                return false;
+            }
 
             std::string errorMessage = "";
             if (!obfuScationSigner.VerifyMessage(pmn->pubKeyMasternode, vchSig, strMessage, errorMessage)) {
@@ -836,7 +1049,7 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled)
 
             LogPrint("masternode", "CMasternodePing::CheckAndUpdate - Masternode ping accepted, vin: %s\n", vin.prevout.hash.ToString());
 
-            Relay();
+            if (!fNoRelay) Relay();
             return true;
         }
         LogPrint("masternode", "CMasternodePing::CheckAndUpdate - Masternode ping arrived too early, vin: %s\n", vin.prevout.hash.ToString());
@@ -852,4 +1065,123 @@ void CMasternodePing::Relay()
 {
     CInv inv(MSG_MASTERNODE_PING, GetHash());
     RelayInv(inv);
+}
+
+void CMasternodePingV2::Relay()
+{
+    CInv inv_pingv2(MSG_MASTERNODE_PING_V2, GetHash());
+    RelayInv(inv_pingv2);
+}
+
+CMasternodeAuth::CMasternodeAuth(std::vector<unsigned char> vchSignatureWithPreFix, std::string strAddr,
+                                 COutPoint vout)
+{
+    strMnAddr = strAddr;
+    prevout = vout;
+    vchSigWithPreFix = vchSignatureWithPreFix;
+    GetSignature(vchSignatureWithPreFix, vchSignature, version, level);
+}
+
+CMasternodeAuth::CMasternodeAuth(std::vector<unsigned char> vchSignatureWithPreFix, CPubKey pubKeyMasternode,
+                                 COutPoint vout)
+{
+    strMnAddr = CBitcoinAddress(pubKeyMasternode.GetID()).ToString();
+    prevout = vout;
+    vchSigWithPreFix = vchSignatureWithPreFix;
+    GetSignature(vchSignatureWithPreFix, vchSignature, version, level);
+}
+
+CMasternodeAuth::CMasternodeAuth(std::string strAddr, COutPoint vout, int inLevel)
+{
+    strMnAddr = strAddr;
+    prevout = vout;
+    version = V1;
+    level = inLevel;
+}
+
+bool CMasternodeAuth::isValidVersion(int version)
+{
+    return ((version >= V1) && (version < END));
+}
+
+bool CMasternodeAuth::isValidLevel(int level)
+{
+    return ((level >= MIN) && (level <= MAX));
+}
+
+int CMasternodeAuth::GetLevel()
+{
+    return level;
+}
+
+std::vector<unsigned char> CMasternodeAuth::AddPreFix(int version, int level, std::vector<unsigned char> vchSignature)
+{
+    std::vector<unsigned char> preFix;
+    preFix.push_back(version);
+    preFix.push_back(level);
+    preFix.insert(preFix.end(), vchSignature.begin(), vchSignature.end());
+    return preFix;
+}
+
+bool CMasternodeAuth::GetSignature(std::vector<unsigned char> vchSignatureWithPreFix,
+                                   std::vector<unsigned char>& signature, int& v, int& l)
+{
+    if (vchSignatureWithPreFix.size() < 1)
+        return false;
+    int v_tmp = vchSignatureWithPreFix[0];
+    if (!isValidVersion(v_tmp))
+        return false;
+    v = v_tmp;
+    if (v_tmp == level1 || v_tmp == level2) {
+        if (vchSignatureWithPreFix.size() < 2)
+            return false;
+        int l_tmp = vchSignatureWithPreFix[1];
+        if (!isValidLevel(l_tmp))
+            return false;
+        l = l_tmp;
+        signature = std::vector<unsigned char>(vchSignatureWithPreFix.begin() + 2, vchSignatureWithPreFix.end());
+        return true;
+    }
+    return false;
+}
+
+std::string CMasternodeAuth::BuildMessage(std::string strMnAddr, std::string strVin, int prevout_n, int level)
+{
+    return strMnAddr + strVin + std::to_string(prevout_n) + std::to_string(level);
+};
+
+
+bool CMasternodeAuth::CheckSignature(std::string& errorMessage)
+{
+    if (vchSigWithPreFix.size() == 0) {
+        errorMessage = "spork key signature is empty.";
+        return false;
+    }
+
+    std::string strMessage = BuildMessage(strMnAddr, prevout.hash.ToString(), prevout.n, level);
+    if (!sporkCheckSignature(strMessage, vchSignature)) {
+        errorMessage = "spork key signature is invalid.";
+        return false;
+    }
+    return true;
+}
+
+bool CMasternodeAuth::Sign(std::vector<unsigned char>& vchSigAuth, std::string& errorMessage)
+{
+    if (!isValidLevel(level)) {
+        errorMessage = strprintf("CMasternodeAuth:: Authorization level (%d) is invalid.", level);
+        return false;
+    }
+    if (!isValidVersion(version)) {
+        errorMessage = strprintf("CMasternodeAuth:: Authorization version (%d) is invalid.", version);
+        return false;
+    }
+
+    std::string strMessage = BuildMessage(strMnAddr, prevout.hash.ToString(), prevout.n, level);
+    if (!sporkManager.Sign(strMessage, vchSignature)) {
+        errorMessage = "CMasternodeAuth:: sign failed.";
+        return false;
+    }
+    vchSigWithPreFix = CMasternodeAuth::AddPreFix(version, level, vchSignature);
+    vchSigAuth = vchSigWithPreFix;
 }

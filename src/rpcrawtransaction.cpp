@@ -757,3 +757,45 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
 
     return hashTx.GetHex();
 }
+
+UniValue isutxo(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 2)
+        throw runtime_error(
+            "isutxo\n"
+            "Check if a txid + output is utxo at this moment.\n"
+            "\nResult:\n"
+            "\nArguments:\n"
+            "1. \"txid\"            (string, required) Transaction ID\n"
+            "2. \"tx_output\"       (numeric, required) Transaction output\n"
+            "{\n"
+            "  \"isUTXO\": xxxxx,                          (bool) true of false\n"
+            "  \"current_block_height\": xxxxxxx,           (numeric) current best block height\n"
+            "  \"current_block_hash\": xxxxxxx,             (numeric) the hash of the current best block\n"
+            "}\n"
+            "\nExamples:\n" +
+            HelpExampleCli("isutxo", "\"2baf3ea9a616ed0f4537700131549ca62510afb4d4961dd749b8077ba6302eee\" 0") + HelpExampleRpc("isutxo", "\"2baf3ea9a616ed0f4537700131549ca62510afb4d4961dd749b8077ba6302eee\" 0"));
+
+    std::string strTXid = params[0].get_str();
+    uint256 hash(strTXid);
+    int output = params[1].get_int();
+    bool isUtxo = false;
+
+    CCoinsView dummy;
+    CCoinsViewCache view(&dummy);
+    {
+        LOCK(mempool.cs);
+        CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
+        view.SetBackend(viewMemPool);
+        const CCoins* coins = view.AccessCoins(hash);
+        if (coins && coins->IsAvailable(output)) {
+            isUtxo = true;
+        }
+    }
+
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("isUTXO", isUtxo));
+    obj.push_back(Pair("current_blocks", (int)chainActive.Height()));
+    obj.push_back(Pair("current_bestblockhash", chainActive.Tip()->GetBlockHash().GetHex()));
+    return obj;
+}

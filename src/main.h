@@ -54,6 +54,7 @@ struct CNodeStateStats;
 
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
+static const unsigned int DEFAULT_BLOCK_MAX_SIZE_3_M = 3000000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 /** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/
 static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 50000;
@@ -249,6 +250,7 @@ bool GetTransaction(const uint256& hash, CTransaction& tx, uint256& hashBlock, b
 
 bool DisconnectBlocksAndReprocess(int blocks);
 
+bool MnReword2020Enabled();
 int64_t GetMasternodeCollateral(unsigned mnlevel);
 double GetMasternodeRewardProportion(unsigned mnlevel);
 double GetMasternodeBlockFeeProportion(unsigned mnlevel);
@@ -258,6 +260,7 @@ int64_t GetMasternodeFee(int nHeight, unsigned mnlevel, int64_t blockFee);
 double ConvertBitsToDouble(unsigned int nBits);
 int64_t GetMasternodePayment(int nHeight, unsigned mnlevel, int64_t blockValue);
 
+std::string GetAxelFixedAddr(int block_height);
 
 bool ActivateBestChain(CValidationState& state, CBlock* pblock = NULL, bool fAlreadyChecked = false);
 CAmount GetBlockValue(int nHeight);

@@ -33,7 +33,7 @@ void CActiveMasternode::ManageStatus()
     if (status == ACTIVE_MASTERNODE_SYNC_IN_PROCESS)
         status = ACTIVE_MASTERNODE_INITIAL;
 
-    if (status == ACTIVE_MASTERNODE_INITIAL) {
+    if (status == ACTIVE_MASTERNODE_INITIAL || status == ACTIVE_MASTERNODE_NOT_CAPABLE) {
         CMasternode* pmn;
         pmn = mnodeman.Find(pubKeyMasternode);
         if (pmn != NULL) {
@@ -47,6 +47,10 @@ void CActiveMasternode::ManageStatus()
         // Set defaults
         status = ACTIVE_MASTERNODE_NOT_CAPABLE;
         notCapableReason = "";
+
+        if ( true /* mnbV2 is Activated. The only way to active masternode is RPC startmasternode.*/ ){
+            return;
+        }
 
         if (pwalletMain->IsLocked()) {
             notCapableReason = "Wallet is locked.";
@@ -109,7 +113,7 @@ void CActiveMasternode::ManageStatus()
                 return;
             }
 
-            if (!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, errorMessage)) {
+            if (!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, "", errorMessage)) {
                 notCapableReason = "Error on Register: " + errorMessage;
                 LogPrintf("Register::ManageStatus() - %s\n", notCapableReason);
                 return;
@@ -150,6 +154,7 @@ std::string CActiveMasternode::GetStatus()
     }
 }
 
+#include "resck.h"
 bool CActiveMasternode::SendMasternodePing(std::string& errorMessage)
 {
     if (status != ACTIVE_MASTERNODE_STARTED) {
@@ -167,41 +172,74 @@ bool CActiveMasternode::SendMasternodePing(std::string& errorMessage)
 
     LogPrintf("CActiveMasternode::SendMasternodePing() - Relay Masternode Ping vin = %s\n", vin.ToString());
 
-    CMasternodePing mnp(vin);
-    if (!mnp.Sign(keyMasternode, pubKeyMasternode)) {
-        errorMessage = "Couldn't sign Masternode Ping";
-        return false;
-    }
-
+    CMasternodePingV2 mnpV2(vin);
+    CMasternodePing *mnp = (CMasternodePing *)&mnpV2;
+    mnpV2.sigTime = GetAdjustedTime();
     // Update lastPing for our masternode in Masternode list
     CMasternode* pmn = mnodeman.Find(vin);
     if (pmn != NULL) {
-        if (pmn->IsPingedWithin(MASTERNODE_PING_SECONDS, mnp.sigTime)) {
+        if (pmn->IsPingedWithin(MASTERNODE_PING_SECONDS, mnpV2.sigTime)) {
             errorMessage = "Too early to send Masternode Ping";
             return false;
         }
 
-        pmn->lastPing = mnp;
-        mnodeman.mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
+        if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
+            unsigned mnlevel = CMasternode::Level(vin, chainActive.Height());
+            bool needCheck = (mnlevel != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+            if (needCheck) {
+                string strPubKeyMasternode = HexStr(pubKeyMasternode.GetHex());
+                CResCker rescker;
+                string strHostID;
+                vector<unsigned char> vchSigRes;
+                if (!rescker.CkRes(strPubKeyMasternode, vin.prevout.hash, vin.prevout.n, mnlevel, pmn->sigAuth, mnpV2.sigTime,
+                                             errorMessage, strHostID, vchSigRes)) {
+                    LogPrintf("CActiveMasternode::SendMasternodePing() CkRes() not passed-tier is %d error: %s\n", mnlevel,
+                              errorMessage);
+                    return false;
+                }  else {
+                    std::vector<CMasternode> vMasternodes = mnodeman.GetFullMasternodeVector();
+                    for(CMasternode& mn : vMasternodes) {
+                        if(!mn.lastPing.uid.empty() && mn.lastPing.uid == strHostID && mn.vin != vin) {
+                            LogPrintf("CActiveMasternode::SendMasternodePing() CkRes() passed but duplicate resid %s\n",strHostID);
+                            return false;
+                        }
+                    }
+                }
+                mnpV2.uid = strHostID;
+                mnpV2.resSig = vchSigRes;
+            }
+        }
 
+        if (!mnpV2.Sign(keyMasternode, pubKeyMasternode,mnpV2.sigTime)) {
+            errorMessage = "Couldn't sign Masternode Ping";
+            return false;
+        }
+        pmn->lastPing = *mnp;
+
+        mnodeman.mapSeenMasternodePing[mnpV2.GetHash()] = *mnp;
         //mnodeman.mapSeenMasternodeBroadcast.lastPing is probably outdated, so we'll update it
         CMasternodeBroadcast mnb(*pmn);
         uint256 hash = mnb.GetHash();
-        if (mnodeman.mapSeenMasternodeBroadcast.count(hash)) mnodeman.mapSeenMasternodeBroadcast[hash].lastPing = mnp;
+        if (mnodeman.mapSeenMasternodeBroadcast.count(hash)) mnodeman.mapSeenMasternodeBroadcast[hash].lastPing = *mnp;
 
-        mnp.Relay();
+        if (!IsSporkActive(SPORK_15_MN_V2)){
+            CMasternodePing mnpV1 = mnpV2;
+            mnpV1.Relay();
+        }
+        mnpV2.Relay();
 
         return true;
     } else {
         // Seems like we are trying to send a ping while the Masternode is not registered in the network
         errorMessage = "Obfuscation Masternode List doesn't include our Masternode, shutting down Masternode pinging service! " + vin.ToString();
         status = ACTIVE_MASTERNODE_NOT_CAPABLE;
+        vin = CTxIn();
         notCapableReason = errorMessage;
         return false;
     }
 }
 
-bool CActiveMasternode::Register(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& errorMessage)
+bool CActiveMasternode::Register(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string auth, std::string& errorMessage)
 {
     CTxIn vin;
     CPubKey pubKeyCollateralAddress;
@@ -234,7 +272,7 @@ bool CActiveMasternode::Register(std::string strService, std::string strKeyMaste
 
     auto service = CService{strService};
 
-    if(!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, errorMessage))
+    if(!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, auth, errorMessage))
         return false;
 
     addrman.Add(CAddress{service}, CNetAddr{"127.0.0.1"}, 2 * 60 * 60);
@@ -242,7 +280,7 @@ bool CActiveMasternode::Register(std::string strService, std::string strKeyMaste
     return true;
 }
 
-bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateralAddress, CPubKey pubKeyCollateralAddress, CKey keyMasternode, CPubKey pubKeyMasternode, std::string& errorMessage)
+bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateralAddress, CPubKey pubKeyCollateralAddress, CKey keyMasternode, CPubKey pubKeyMasternode, std::string auth, std::string& errorMessage)
 {
     auto mnode = mnodeman.Find(service);
 
@@ -261,7 +299,7 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
         return false;
     }
 
-    CMasternodePing mnp(vin);
+    CMasternodePingV2 mnp(vin);
     if (!mnp.Sign(keyMasternode, pubKeyMasternode)) {
         errorMessage = strprintf("Failed to sign ping, vin: %s", vin.ToString());
         LogPrintf("CActiveMasternode::Register() -  %s\n", errorMessage);
@@ -270,7 +308,21 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
     mnodeman.mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
 
     LogPrintf("CActiveMasternode::Register() - Adding to Masternode list\n    service: %s\n    vin: %s\n", service.ToString(), vin.ToString());
-    CMasternodeBroadcast mnb(service, vin, pubKeyCollateralAddress, pubKeyMasternode, PROTOCOL_VERSION);
+    unsigned level = CMasternode::Level(vin, chainActive.Height());
+    std::vector<unsigned char> vchAuthWithPreFix = ParseHex(auth);
+    bool needCheck = (level != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+    if (vchAuthWithPreFix.size() > 0) needCheck = true;
+    if (needCheck) {
+        CMasternodeAuth auth(vchAuthWithPreFix, pubKeyMasternode, vin.prevout);
+        if (!auth.CheckSignature(errorMessage)) {
+            LogPrintf("CActiveMasternode::Register() - %s\n", errorMessage);
+            return false;
+        }
+        LogPrintf("CActiveMasternode::Register() - spork key auth signature success, auth level is %d\n", auth.GetLevel());
+    }
+    CMasternodeBroadcastV2 mnb(service, vin, pubKeyCollateralAddress, pubKeyMasternode, PROTOCOL_VERSION, vchAuthWithPreFix);
+
+
     mnb.lastPing = mnp;
     if (!mnb.Sign(keyCollateralAddress)) {
         errorMessage = strprintf("Failed to sign broadcast, vin: %s", vin.ToString());
@@ -290,6 +342,10 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
 
     //send to all peers
     LogPrintf("CActiveMasternode::Register() - RelayElectionEntry vin = %s\n", vin.ToString());
+    if (!IsSporkActive(SPORK_15_MN_V2)){
+        CMasternodeBroadcast mnbv1 = mnb;
+        mnbv1.Relay();
+    }
     mnb.Relay();
 
     return true;
@@ -353,7 +409,7 @@ bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secr
 
         for(auto& out : possibleCoins) {
 
-            if(selected_level == 1u)
+            if(selected_level == CMasternode::LevelValue::LEVEL_1)
                 break;
 
             if(CMasternode::Level(out.tx->vout[out.i].nValue, chainActive.Height()) < selected_level)

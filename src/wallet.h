@@ -424,6 +424,7 @@ public:
     void AutoCombineDust();
 
     static CFeeRate minTxFee;
+    static CFeeRate minTxFee2020;
     static CFeeRate SelectMinTxFee();
     static bool SetMinTxFee(CFeeRate rate);
     static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool);

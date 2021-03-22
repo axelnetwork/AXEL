@@ -47,7 +47,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="tabMyMasternodes">
         <attribute name="title">
@@ -73,7 +73,6 @@
              </item>
             </layout>
            </item>
-           
            <item>
             <widget class="QTableWidget" name="tableWidgetMyMasternodes">
              <property name="minimumSize">
@@ -295,12 +294,22 @@
            </column>
            <column>
             <property name="text">
+             <string>UID</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
              <string>Level</string>
             </property>
            </column>
            <column>
             <property name="text">
              <string>Protocol</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Client Version</string>
             </property>
            </column>
            <column>

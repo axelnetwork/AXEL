@@ -12,6 +12,7 @@
 
 #include "net.h"
 
+#include "spork.h"
 #include "addrman.h"
 #include "chainparams.h"
 #include "clientversion.h"
@@ -601,7 +602,12 @@ bool CNode::ReceiveMsgBytes(const char* pch, unsigned int nBytes)
         if (handled < 0)
             return false;
 
-        if (msg.in_data && msg.hdr.nMessageSize > MAX_PROTOCOL_MESSAGE_LENGTH) {
+        unsigned int max_message_length = MAX_PROTOCOL_MESSAGE_LENGTH;
+        if ( IsSporkActive(SPORK_14_BLOCK_SIZE_3_M) ){
+            max_message_length = MAX_PROTOCOL_MESSAGE_LENGTH_3M;
+        }
+
+        if (msg.in_data && msg.hdr.nMessageSize > max_message_length) {
             LogPrint("net", "Oversized message from peer=%i, disconnecting", GetId());
             return false;
         }

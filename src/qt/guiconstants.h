@@ -54,5 +54,6 @@ static const int MAX_URI_LENGTH = 255;
 #define QAPP_ORG_DOMAIN "axel.org"
 #define QAPP_APP_NAME_DEFAULT "axel-qt"
 #define QAPP_APP_NAME_TESTNET "axel-qt-testnet"
+#define QAPP_APP_NAME_PRE_POROD "axel-qt-pre-prod"
 
 #endif // BITCOIN_QT_GUICONSTANTS_H

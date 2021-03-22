@@ -30,6 +30,7 @@ class CMasternodeDB
 {
 private:
     boost::filesystem::path pathMN;
+    boost::filesystem::path pathMNNew;//added
     std::string strMagicMessage;
 
 public:
@@ -44,13 +45,13 @@ public:
     };
 
     CMasternodeDB();
-    bool Write(const CMasternodeMan& mnodemanToSave);
-    ReadResult Read(CMasternodeMan& mnodemanToLoad, bool fDryRun = false);
+    bool Write(const CMasternodeMan& mnodemanToSave, int version = CLIENT_VERSION);
+    ReadResult Read(CMasternodeMan& mnodemanToLoad, bool fDryRun = false, int version = CLIENT_VERSION);
 };
 
 class CMasternodeMan
 {
-private:
+protected:
     // critical section to protect the inner data structures
     mutable CCriticalSection cs;
 
@@ -173,4 +174,27 @@ public:
     void UpdateMasternodeList(CMasternodeBroadcast mnb);
 };
 
+class CMasternodeManV2 : public CMasternodeMan
+{
+public:
+    ADD_SERIALIZE_METHODS;
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    {
+        LOCK(cs);
+        std::vector<CMasternodeV2> *vMasternodesV2 = (std::vector<CMasternodeV2> *)&vMasternodes;
+        map<uint256, CMasternodeBroadcastV2> *mapSeenMasternodeBroadcastV2 = (map<uint256, CMasternodeBroadcastV2> *) &mapSeenMasternodeBroadcast;
+        map<uint256, CMasternodePingV2> *mapSeenMasternodePingV2 = (map<uint256, CMasternodePingV2> *)&mapSeenMasternodePing;
+        READWRITE(*vMasternodesV2);
+        READWRITE(mAskedUsForMasternodeList);
+        READWRITE(mWeAskedForMasternodeList);
+        READWRITE(mWeAskedForMasternodeListEntry);
+        READWRITE(mAskedUsForWinnerMasternodeList);
+        READWRITE(mWeAskedForWinnerMasternodeList);
+        READWRITE(nDsqCount);
+
+        READWRITE(*mapSeenMasternodeBroadcastV2);
+        READWRITE(*mapSeenMasternodePingV2);
+    }
+};
 #endif

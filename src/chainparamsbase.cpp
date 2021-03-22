@@ -24,6 +24,15 @@ public:
         networkID = CBaseChainParams::MAIN;
         nRPCPort = 32325;
     }
+
+    const void SetAsPreProduction()
+    {
+        if (!fPreProduction) {
+            fPreProduction = true;
+            nRPCPort = 34325;
+            strDataDir = "preprod";
+        }
+    }
 };
 static CBaseMainParams mainParams;
 
@@ -103,6 +112,9 @@ CBaseChainParams::Network NetworkIdFromCommandLine()
 {
     bool fRegTest = GetBoolArg("-regtest", false);
     bool fTestNet = GetBoolArg("-testnet", false);
+    bool fPreProd = GetBoolArg("-preprod", false);
+
+    if (fPreProd) mainParams.SetAsPreProduction();
 
     if (fTestNet && fRegTest)
         return CBaseChainParams::MAX_NETWORK_TYPES;
@@ -118,6 +130,9 @@ bool SelectBaseParamsFromCommandLine()
     CBaseChainParams::Network network = NetworkIdFromCommandLine();
     if (network == CBaseChainParams::MAX_NETWORK_TYPES)
         return false;
+
+    bool fPreProd = GetBoolArg("-preprod", false);
+    if (fPreProd) mainParams.SetAsPreProduction();
 
     SelectBaseParams(network);
     return true;

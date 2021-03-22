@@ -13,6 +13,7 @@
 #include "util.h"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include "resck.h"
 
 /** Masternode manager */
 CMasternodeMan mnodeman;
@@ -48,26 +49,33 @@ struct CompareScoreMN {
 CMasternodeDB::CMasternodeDB()
 {
     pathMN = GetDataDir() / "mncache.dat";
+    pathMNNew = GetDataDir() / "mncachev2.dat";
     strMagicMessage = "MasternodeCache";
 }
 
-bool CMasternodeDB::Write(const CMasternodeMan& mnodemanToSave)
+bool CMasternodeDB::Write(const CMasternodeMan& mnodemanToSave, int version)//added
 {
     int64_t nStart = GetTimeMillis();
+    const CMasternodeManV2 * mnodemanToSaveV2 = (const CMasternodeManV2 *) &mnodemanToSave;
 
     // serialize, checksum data up to that point, then append checksum
-    CDataStream ssMasternodes(SER_DISK, CLIENT_VERSION);
+    CDataStream ssMasternodes(SER_DISK, version);//added
     ssMasternodes << strMagicMessage;                   // masternode cache file specific magic message
     ssMasternodes << FLATDATA(Params().MessageStart()); // network specific magic number
-    ssMasternodes << mnodemanToSave;
+    ssMasternodes << *mnodemanToSaveV2;
     uint256 hash = Hash(ssMasternodes.begin(), ssMasternodes.end());
     ssMasternodes << hash;
 
     // open output file, and associate with CAutoFile
-    FILE* file = fopen(pathMN.string().c_str(), "wb");
+    boost::filesystem::path pathMNFile;//added
+    if(version==CLIENT_VERSION)
+        pathMNFile = pathMNNew;
+    else
+        pathMNFile = pathMN;
+    FILE* file = fopen(pathMNFile.string().c_str(), "wb");
     CAutoFile fileout(file, SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
-        return error("%s : Failed to open file %s", __func__, pathMN.string());
+        return error("%s : Failed to open file %s", __func__, pathMNFile.string());
 
     // Write and commit header, data
     try {
@@ -78,25 +86,31 @@ bool CMasternodeDB::Write(const CMasternodeMan& mnodemanToSave)
     //    FileCommit(fileout);
     fileout.fclose();
 
-    LogPrintf("Written info to mncache.dat  %dms\n", GetTimeMillis() - nStart);
+    LogPrintf("Written info to %s  %dms\n",pathMNFile.string(),GetTimeMillis() - nStart);
     LogPrintf("  %s\n", mnodemanToSave.ToString());
 
     return true;
 }
 
-CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad, bool fDryRun)
+CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad, bool fDryRun, int version)
 {
     int64_t nStart = GetTimeMillis();
+    CMasternodeManV2 * mnodemanToLoadV2 = (CMasternodeManV2 *) &mnodemanToLoad;
     // open input file, and associate with CAutoFile
-    FILE* file = fopen(pathMN.string().c_str(), "rb");
-    CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
+    boost::filesystem::path pathMNFile;//added
+    if(version==CLIENT_VERSION)
+        pathMNFile = pathMNNew;
+    else
+        pathMNFile = pathMN;
+    FILE* file = fopen(pathMNFile.string().c_str(), "rb");
+    CAutoFile filein(file, SER_DISK, CLIENT_VERSION);//added
     if (filein.IsNull()) {
-        error("%s : Failed to open file %s", __func__, pathMN.string());
+        error("%s : Failed to open file %s", __func__, pathMNFile.string());
         return FileError;
     }
 
     // use file size to size memory buffer
-    int fileSize = boost::filesystem::file_size(pathMN);
+    int fileSize = boost::filesystem::file_size(pathMNFile);
     int dataSize = fileSize - sizeof(uint256);
     // Don't try to resize to a negative number if file is small
     if (dataSize < 0)
@@ -115,7 +129,7 @@ CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad, bo
     }
     filein.fclose();
 
-    CDataStream ssMasternodes(vchData, SER_DISK, CLIENT_VERSION);
+    CDataStream ssMasternodes(vchData, SER_DISK, version);
 
     // verify stored checksum matches input data
     uint256 hashTmp = Hash(ssMasternodes.begin(), ssMasternodes.end());
@@ -146,14 +160,19 @@ CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad, bo
             return IncorrectMagicNumber;
         }
         // de-serialize data into CMasternodeMan object
-        ssMasternodes >> mnodemanToLoad;
+        if (version == CLIENT_VERSION) {
+            ssMasternodes >> *mnodemanToLoadV2;
+        }
+        else {
+            ssMasternodes >> mnodemanToLoad;
+        }
     } catch (std::exception& e) {
         mnodemanToLoad.Clear();
         error("%s : Deserialize or I/O error - %s", __func__, e.what());
         return IncorrectFormat;
     }
 
-    LogPrintf("Loaded info from mncache.dat  %dms\n", GetTimeMillis() - nStart);
+    LogPrintf("Loaded info from %s  %dms\n", pathMNFile.string(), GetTimeMillis() - nStart);
     LogPrintf("  %s\n", mnodemanToLoad.ToString());
     if (!fDryRun) {
         LogPrintf("Masternode manager - cleaning....\n");
@@ -172,21 +191,21 @@ void DumpMasternodes()
     CMasternodeDB mndb;
     CMasternodeMan tempMnodeman;
 
-    LogPrintf("Verifying mncache.dat format...\n");
+    LogPrintf("Verifying mncachev2.dat format...\n");
     CMasternodeDB::ReadResult readResult = mndb.Read(tempMnodeman, true);
     // there was an error and it was not an error on file opening => do not proceed
     if (readResult == CMasternodeDB::FileError)
-        LogPrintf("Missing masternode cache file - mncache.dat, will try to recreate\n");
+        LogPrintf("DumpMasternodes:Missing masternode cache file - mncachev2.dat, will try to recreate\n");
     else if (readResult != CMasternodeDB::Ok) {
-        LogPrintf("Error reading mncache.dat: ");
+        LogPrintf("Error reading mncachev2.dat: ");
         if (readResult == CMasternodeDB::IncorrectFormat)
-            LogPrintf("magic is ok but data has invalid format, will try to recreate\n");
+            LogPrintf("DumpMasternodes:magic is ok but data has invalid format, will try to recreate\n");
         else {
-            LogPrintf("file format is unknown or invalid, please fix it manually\n");
+            LogPrintf("DumpMasternodes:file format is unknown or invalid, please fix it manually\n");
             return;
         }
     }
-    LogPrintf("Writting info to mncache.dat...\n");
+    LogPrintf("Writting info to mncachev2.dat...\n");
     mndb.Write(mnodeman);
 
     LogPrintf("Masternode dump finished  %dms\n", GetTimeMillis() - nStart);
@@ -649,6 +668,14 @@ CMasternode* CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight
         if (!mn.IsEnabled())
             continue;
 
+        if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
+            unsigned mnlevel = CMasternode::Level(mn.vin, chainActive.Height());
+            bool needCheck = (mnlevel != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+            if (needCheck) {
+                 if (mn.lastPing.uid.empty() || (mn.lastPing.sigTime < mn.invalidPing.sigTime))
+                     continue;
+            }
+        }
         //it's too new, wait for a cycle
         if (fFilterSigTime && mn.sigTime + (nMnCount * 2.6 * 60) > GetAdjustedTime())
             continue;
@@ -757,6 +784,14 @@ CMasternode* CMasternodeMan::GetCurrentMasterNode(unsigned mnlevel, int mod, int
 
         if(mn.protocolVersion < minProtocol || !mn.IsEnabled())
             continue;
+
+        if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
+            bool needCheck = (mnlevel != ((chainActive.Height() >= GetSporkValue(SPORK_11_OP_MN_REWARD_2020)) ? CMasternode::LevelValue::LEVEL_4 : CMasternode::LevelValue::LEVEL_3));
+            if (needCheck) {
+                if (mn.lastPing.uid.empty() || (mn.lastPing.sigTime < mn.invalidPing.sigTime))
+                     continue;
+             }
+        }
 
         // calculate the score for each Masternode
         uint256 n  = mn.CalculateScore(mod, nBlockHeight);
@@ -915,6 +950,7 @@ void CMasternodeMan::ProcessMasternodeConnections()
     }
 }
 
+
 void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv)
 {
     if (fLiteMode) return; //disable all Obfuscation/Masternode related functionality
@@ -940,6 +976,12 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
                 pmn1->activeState = CMasternode::MASTERNODE_REMOVE;
                 mnodeman.CheckAndRemove();
             }
+        }
+
+        if (IsSporkActive(SPORK_15_MN_V2))
+        {
+            LogPrintf("mnb - not support anymore\n");
+            return;
         }
 
         auto pmn = mnodeman.Find(mnb.addr);
@@ -995,19 +1037,146 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         }
     }
 
+    else if (strCommand == "mnbv2") { //Masternode Broadcast
+        CMasternodeBroadcastV2 mnb;
+        vRecv >> mnb;
+
+        auto pmn1 = mnodeman.FindByCollateralAddress(mnb.pubKeyCollateralAddress);
+        if(pmn1 && pmn1->vin != mnb.vin)
+        {
+            if(pmn1->sigTime <= mnb.sigTime)
+            {
+                LogPrintf("mnb - More than one vin used for one collateral address and mnb sigTime %d young than pmn1 %d,vin:%s,discard it\n",mnb.sigTime,pmn1->sigTime,mnb.vin.prevout.hash.ToString());
+                return;
+            }
+            else
+            {
+                LogPrintf("mnb - More than one vin used for one collateral address and mnb sigTime %d old than pmn1 %d,vin:%s,remove pmn1\n",mnb.sigTime,pmn1->sigTime,mnb.vin.prevout.hash.ToString());
+                pmn1->activeState = CMasternode::MASTERNODE_REMOVE;
+                mnodeman.CheckAndRemove();
+            }
+        }
+
+        auto pmn = mnodeman.Find(mnb.addr);
+
+        if(pmn && pmn->vin != mnb.vin)
+        {
+            pmn->Check(true);
+
+            if(pmn->IsEnabled())
+            {
+                LogPrintf("mnb - More than one vin used for single IP address\n");
+                Misbehaving(pfrom->GetId(), 100);
+                return;
+            }
+        }
+
+        //mnb's lastping with uid still need check
+        if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
+            if (!mnb.lastPing.VerifyRes(mnb.pubKeyMasternode, mnb.sigAuth)) {
+                Misbehaving(pfrom->GetId(), 100);
+                return;
+            }
+        }
+
+        if (mapSeenMasternodeBroadcast.count(mnb.GetHash())) { //seen
+            if (pmn && (pmn->mnbVer == MASTERNODE_V1 || pmn->sigAuth.size() == 0)) {
+                // check and update the sigAuth in mnb.CheckAndUpdate()
+            } else {
+                masternodeSync.AddedMasternodeList(mnb.GetHash());
+                return;
+            }
+        }
+
+
+        mapSeenMasternodeBroadcast[mnb.GetHash()] = mnb;
+
+        int nDoS = 0;
+        if (!mnb.CheckAndUpdate(nDoS)) {
+            if (nDoS > 0)
+                Misbehaving(pfrom->GetId(), nDoS);
+
+            //failed
+            return;
+        }
+
+        // make sure the vout that was signed is related to the transaction that spawned the Masternode
+        //  - this is expensive, so it's only done once per Masternode
+        if (!obfuScationSigner.IsVinAssociatedWithPubkey(mnb.vin, mnb.pubKeyCollateralAddress)) {
+            LogPrintf("mnb - Got mismatched pubkey and vin\n");
+            Misbehaving(pfrom->GetId(), 33);
+            return;
+        }
+
+        // make sure it's still unspent
+        //  - this is checked later by .check() in many places and by ThreadCheckObfuScationPool()
+        if (mnb.CheckInputsAndAdd(nDoS)) {
+            // use this as a peer
+            addrman.Add(CAddress(mnb.addr), pfrom->addr, 2 * 60 * 60);
+            masternodeSync.AddedMasternodeList(mnb.GetHash());
+        } else {
+            LogPrintf("mnb - Rejected Masternode entry %s\n", mnb.vin.prevout.hash.ToString());
+            if (nDoS > 0) {
+                Misbehaving(pfrom->GetId(), nDoS);
+                return;
+            }
+        }
+    }
+
+
     else if (strCommand == "mnp") { //Masternode Ping
         CMasternodePing mnp;
         vRecv >> mnp;
 
         LogPrint("masternode", "mnp - Masternode ping, vin: %s\n", mnp.vin.prevout.hash.ToString());
 
-        if (mapSeenMasternodePing.count(mnp.GetHash()))  //seen
+        if (!IsSporkActive(SPORK_15_MN_V2)) {
+            if (mapSeenMasternodePing.count(mnp.GetHash()))  //seen
+                return;
+
+            mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
+
+            int nDoS = 0;
+            if (mnp.CheckAndUpdate(nDoS)) return;
+
+            if (nDoS > 0) {
+                // if anything significant failed, mark that node
+                Misbehaving(pfrom->GetId(), nDoS);
+            } else {
+                // if nothing significant failed, search existing Masternode list
+                CMasternode* pmn = Find(mnp.vin);
+                // if it's known, don't ask for the mnb, just return
+                if (pmn) return;
+            }
+
+            // something significant is broken or mn is unknown,
+            // we might have to ask for a masternode entry once
+            AskForMN(pfrom, mnp.vin);
+        }
+    }
+
+    else if (strCommand == "mnpv2") { //Masternode Ping
+        CMasternodePingV2 mnp;
+        vRecv >> mnp;
+
+        LogPrint("masternode", "mnp - Masternode pingv2, vin: %s\n", mnp.vin.prevout.hash.ToString());
+
+        bool fLastIsMnpv1 = false;
+        int64_t lastSigTime = -1;
+        CMasternode* pmn = mnodeman.Find(mnp.vin);
+        if (pmn) {
+            lastSigTime = pmn->lastPing.sigTime;
+            fLastIsMnpv1 = (pmn->lastPing.mnpVer == MASTERNODE_V1);
+        }
+
+        if (!fLastIsMnpv1 && mapSeenMasternodePing.count(mnp.GetHash()))  //seen
             return;
 
-        mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
+        mapSeenMasternodePing[mnp.GetHash()] = mnp;
 
         int nDoS = 0;
-        if (mnp.CheckAndUpdate(nDoS)) return;
+        bool fIgnoreSigTime = !IsSporkActive(SPORK_15_MN_V2) && (lastSigTime == mnp.sigTime);
+        if (mnp.CheckAndUpdate(nDoS, true, fIgnoreSigTime, false, true)) return;
 
         if (nDoS > 0) {
             // if anything significant failed, mark that node
@@ -1022,7 +1191,6 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         // something significant is broken or mn is unknown,
         // we might have to ask for a masternode entry once
         AskForMN(pfrom, mnp.vin);
-
     }
 
     else if (strCommand == "dseg") { //Get Masternode list or specific entry
@@ -1060,7 +1228,17 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
                 if (vin == CTxIn() || vin == mn.vin) {
                     CMasternodeBroadcast mnb = CMasternodeBroadcast(mn);
                     uint256 hash = mnb.GetHash();
-                    pfrom->PushInventory(CInv(MSG_MASTERNODE_ANNOUNCE, hash));
+                    if (IsSporkActive(SPORK_15_MN_V2)) {
+                        if (mn.mnbVer == MASTERNODE_V2) {
+                            pfrom->PushInventory(CInv(MSG_MASTERNODE_ANNOUNCE_V2, hash));
+                        }
+                    }
+                    else {
+                        pfrom->PushInventory(CInv(MSG_MASTERNODE_ANNOUNCE, hash));
+                        if (mn.mnbVer == MASTERNODE_V2){
+                            pfrom->PushInventory(CInv(MSG_MASTERNODE_ANNOUNCE_V2, hash));
+                        }
+                    }
                     nInvCount++;
 
                     if (!mapSeenMasternodeBroadcast.count(hash)) mapSeenMasternodeBroadcast.insert(make_pair(hash, mnb));

@@ -33,7 +33,7 @@ private:
     bool SendMasternodePing(std::string& errorMessage);
 
     /// Register any Masternode
-    bool Register(CTxIn vin, CService service, CKey key, CPubKey pubKey, CKey keyMasternode, CPubKey pubKeyMasternode, std::string& errorMessage);
+    bool Register(CTxIn vin, CService service, CKey key, CPubKey pubKey, CKey keyMasternode, CPubKey pubKeyMasternode, std::string auth, std::string& errorMessage);
 
     /// Get axel input that can be used for the Masternode
     bool GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secretKey, std::string strTxHash, std::string strOutputIndex);
@@ -48,6 +48,8 @@ public:
     CTxIn vin;
     CService service;
 
+    std::string auth;
+
     int status;
     std::string notCapableReason;
 
@@ -61,7 +63,7 @@ public:
     std::string GetStatus();
 
     /// Register remote Masternode
-    bool Register(std::string strService, std::string strKey, std::string strTxHash, std::string strOutputIndex, std::string& errorMessage);
+    bool Register(std::string strService, std::string strKey, std::string strTxHash, std::string strOutputIndex, std::string auth, std::string& errorMessage);
 
     /// Get axel input that can be used for the Masternode
     bool GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secretKey);

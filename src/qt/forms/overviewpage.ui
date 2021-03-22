@@ -822,17 +822,7 @@
                          <property name="verticalSpacing">
                           <number>0</number>
                          </property>
-                         <item row="3" column="1">
-                          <widget class="QLabel" name="tier2_colat">
-                           <property name="text">
-                            <string>25000</string>
-                           </property>
-                           <property name="alignment">
-                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                           </property>
-                          </widget>
-                         </item>
-                         <item row="6" column="1">
+                         <item row="7" column="1">
                           <widget class="QLabel" name="tier1_colat">
                            <property name="text">
                             <string>50000</string>
@@ -842,39 +832,60 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="2" column="0">
-                          <widget class="QLabel" name="tier_3">
+                         <item row="4" column="1">
+                          <widget class="QLabel" name="tier2_colat">
+                           <property name="text">
+                            <string>25000</string>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="3">
+                          <widget class="QProgressBar" name="graphMN4">
                            <property name="minimumSize">
                             <size>
                              <width>0</width>
-                             <height>0</height>
+                             <height>18</height>
                             </size>
                            </property>
-                           <property name="maximumSize">
-                            <size>
-                             <width>16777215</width>
-                             <height>16777215</height>
-                            </size>
+                           <property name="value">
+                            <number>0</number>
                            </property>
+                           <property name="format">
+                            <string> %v</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="1">
+                          <widget class="QLabel" name="tier4_colat">
+                           <property name="text">
+                            <string>1000</string>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="0">
+                          <widget class="QLabel" name="tier_4">
                            <property name="text">
                             <string>Tier 3 :</string>
                            </property>
-                           <property name="alignment">
-                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                           </property>
                           </widget>
                          </item>
-                         <item row="2" column="1">
-                          <widget class="QLabel" name="tier3_colat">
+                         <item row="1" column="4">
+                          <widget class="QLabel" name="roi_41">
                            <property name="text">
-                            <string>5000</string>
+                            <string>-</string>
                            </property>
                            <property name="alignment">
                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                            </property>
                           </widget>
                          </item>
-                         <item row="3" column="0">
+                         <item row="4" column="0">
                           <widget class="QLabel" name="tier_2">
                            <property name="minimumSize">
                             <size>
@@ -896,12 +907,12 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="3" column="3">
-                          <widget class="QProgressBar" name="graphMN2">
+                         <item row="3" column="0">
+                          <widget class="QLabel" name="tier_3">
                            <property name="minimumSize">
                             <size>
                              <width>0</width>
-                             <height>18</height>
+                             <height>0</height>
                             </size>
                            </property>
                            <property name="maximumSize">
@@ -910,37 +921,25 @@
                              <height>16777215</height>
                             </size>
                            </property>
-                           <property name="value">
-                            <number>0</number>
+                           <property name="text">
+                            <string>Tier 3x:</string>
                            </property>
-                           <property name="format">
-                            <string> %v</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item row="6" column="3">
-                          <widget class="QProgressBar" name="graphMN1">
-                           <property name="minimumSize">
-                            <size>
-                             <width>0</width>
-                             <height>18</height>
-                            </size>
-                           </property>
-                           <property name="maximumSize">
-                            <size>
-                             <width>16777215</width>
-                             <height>16777215</height>
-                            </size>
-                           </property>
-                           <property name="value">
-                            <number>0</number>
-                           </property>
-                           <property name="format">
-                            <string> %v</string>
+                           <property name="alignment">
+                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                            </property>
                           </widget>
                          </item>
-                         <item row="6" column="0">
+                         <item row="3" column="1">
+                          <widget class="QLabel" name="tier3_colat">
+                           <property name="text">
+                            <string>5000</string>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="7" column="0">
                           <widget class="QLabel" name="tier_1">
                            <property name="minimumSize">
                             <size>
@@ -962,7 +961,29 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="2" column="3">
+                         <item row="7" column="3">
+                          <widget class="QProgressBar" name="graphMN1">
+                           <property name="minimumSize">
+                            <size>
+                             <width>0</width>
+                             <height>18</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>16777215</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="value">
+                            <number>0</number>
+                           </property>
+                           <property name="format">
+                            <string> %v</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="3" column="3">
                           <widget class="QProgressBar" name="graphMN3">
                            <property name="minimumSize">
                             <size>
@@ -984,7 +1005,29 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="3" column="5">
+                         <item row="4" column="3">
+                          <widget class="QProgressBar" name="graphMN2">
+                           <property name="minimumSize">
+                            <size>
+                             <width>0</width>
+                             <height>18</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>16777215</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="value">
+                            <number>0</number>
+                           </property>
+                           <property name="format">
+                            <string> %v</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="4" column="5">
                           <widget class="QLabel" name="roi_22">
                            <property name="minimumSize">
                             <size>
@@ -1006,29 +1049,7 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="2" column="5">
-                          <widget class="QLabel" name="roi_32">
-                           <property name="minimumSize">
-                            <size>
-                             <width>50</width>
-                             <height>0</height>
-                            </size>
-                           </property>
-                           <property name="maximumSize">
-                            <size>
-                             <width>16777215</width>
-                             <height>16777215</height>
-                            </size>
-                           </property>
-                           <property name="text">
-                            <string/>
-                           </property>
-                           <property name="alignment">
-                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                           </property>
-                          </widget>
-                         </item>
-                         <item row="3" column="4">
+                         <item row="4" column="4">
                           <widget class="QLabel" name="roi_21">
                            <property name="minimumSize">
                             <size>
@@ -1050,7 +1071,29 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="6" column="5">
+                         <item row="3" column="5">
+                          <widget class="QLabel" name="roi_32">
+                           <property name="minimumSize">
+                            <size>
+                             <width>50</width>
+                             <height>0</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>16777215</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="text">
+                            <string/>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="7" column="5">
                           <widget class="QLabel" name="roi_12">
                            <property name="minimumSize">
                             <size>
@@ -1072,7 +1115,14 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="2" column="4">
+                         <item row="1" column="5">
+                          <widget class="QLabel" name="roi_42">
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="3" column="4">
                           <widget class="QLabel" name="roi_31">
                            <property name="minimumSize">
                             <size>
@@ -1094,7 +1144,7 @@
                            </property>
                           </widget>
                          </item>
-                         <item row="6" column="4">
+                         <item row="7" column="4">
                           <widget class="QLabel" name="roi_11">
                            <property name="minimumSize">
                             <size>

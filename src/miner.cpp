@@ -11,6 +11,7 @@
 #include "amount.h"
 #include "hash.h"
 #include "main.h"
+#include "spork.h"
 #include "masternode-sync.h"
 #include "net.h"
 #include "pow.h"
@@ -128,6 +129,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, 
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
+    if ( IsSporkActive(SPORK_14_BLOCK_SIZE_3_M) ){
+        nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE_3_M);
+    }
     // Limit to betweeen 1K and AXEL_MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(AXEL_MAX_BLOCK_SIZE - 1000), nBlockMaxSize));
 

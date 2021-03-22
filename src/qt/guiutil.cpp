@@ -826,15 +826,33 @@ bool isExternal(QString theme)
     return true;
 }
 
-QString getThemeImage(QString image)
+QString getThemeImage(QString image, bool fConsiderNet)
 {
     QSettings settings;
     QString theme = settings.value("theme", "").toString();
 
     if (theme.operator==("dark")) {
-        return image.insert(image.lastIndexOf(QString("/")), QString("_dark"));
+        if(fConsiderNet) {
+            if(Params().NetworkID() == CBaseChainParams::TESTNET)
+                return image.insert(image.lastIndexOf(QString("/")), QString("_dark")) + QString("_testnet");
+            else if(Params().IsPreProduction())
+                return image.insert(image.lastIndexOf(QString("/")), QString("_dark")) + QString("_preprod");
+            else
+                return image.insert(image.lastIndexOf(QString("/")), QString("_dark"));
+        } else {
+            return image.insert(image.lastIndexOf(QString("/")), QString("_dark"));
+        }
     } else {
-        return image;
+        if(fConsiderNet) {
+            if(Params().NetworkID() == CBaseChainParams::TESTNET)
+                return image + QString("_testnet");
+            else if(Params().IsPreProduction())
+                return image + QString("_preprod");
+            else
+                return image;
+        } else {
+            return image;
+        }
     }
 }
 
@@ -855,7 +873,22 @@ QString loadStyleSheet()
         // Build-in CSS
         settings.setValue("fCSSexternal", false);
         if (!theme.isEmpty()) {
-            cssName = QString(":/css/") + theme;
+            if (theme.operator==("dark"))
+            {
+                if(Params().NetworkID() == CBaseChainParams::TESTNET)
+                    cssName = QString(":/css/dark_testnet");
+                else if(Params().IsPreProduction())
+                    cssName = QString(":/css/dark_preprod");
+                else
+                    cssName = QString(":/css/") + theme;
+            } else {
+                if(Params().NetworkID() == CBaseChainParams::TESTNET)
+                    cssName = QString(":/css/testnet");
+                else if(Params().IsPreProduction())
+                    cssName = QString(":/css/preprod");
+                else
+                    cssName = QString(":/css/") + theme;
+            }
         } else {
             cssName = QString(":/css/default");
             settings.setValue("theme", "default");
