@@ -113,8 +113,9 @@ CBaseChainParams::Network NetworkIdFromCommandLine()
     bool fRegTest = GetBoolArg("-regtest", false);
     bool fTestNet = GetBoolArg("-testnet", false);
     bool fPreProd = GetBoolArg("-preprod", false);
+    bool fCustomMainNet = GetBoolArg("-custommainnet", false);
 
-    if (fPreProd) mainParams.SetAsPreProduction();
+    if (fPreProd && !fCustomMainNet) mainParams.SetAsPreProduction();
 
     if (fTestNet && fRegTest)
         return CBaseChainParams::MAX_NETWORK_TYPES;
@@ -132,7 +133,8 @@ bool SelectBaseParamsFromCommandLine()
         return false;
 
     bool fPreProd = GetBoolArg("-preprod", false);
-    if (fPreProd) mainParams.SetAsPreProduction();
+    bool fCustomMainNet = GetBoolArg("-custommainnet", false);
+    if (fPreProd && !fCustomMainNet) mainParams.SetAsPreProduction();
 
     SelectBaseParams(network);
     return true;

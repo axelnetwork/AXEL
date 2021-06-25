@@ -12,6 +12,7 @@
 
 #include "ecwrapper.h"
 #include <secp256k1.h>
+#include "crypto/common.h"
 
 //! anonymous namespace
 namespace
@@ -93,18 +94,24 @@ bool CKey::Sign(const uint256& hash, std::vector<unsigned char>& vchSig, uint32_
     if (!fValid)
         return false;
     vchSig.resize(72);
-    RFC6979_HMAC_SHA256 prng(begin(), 32, (unsigned char*)&hash, 32);
+    uint32_t counter = 0;
     do {
         uint256 nonce;
+        unsigned char extra_entropy[32] = {0};
+        WriteLE32(extra_entropy, counter);
+        RFC6979_HMAC_SHA256 prng(begin(), 32, (unsigned char*)&hash, 32, (counter == 0)? NULL : extra_entropy, (counter == 0)? 0 : 32);
         prng.Generate((unsigned char*)&nonce, 32);
         nonce += test_case;
+
         int nSigLen = 72;
-        int ret = secp256k1_ecdsa_sign((const unsigned char*)&hash, 32, (unsigned char*)&vchSig[0], &nSigLen, begin(), (unsigned char*)&nonce);
+        int isLowR = 0;
+        int ret = secp256k1_ecdsa_sign((const unsigned char*)&hash, 32, (unsigned char*)&vchSig[0], &nSigLen, begin(), (unsigned char*)&nonce, &isLowR);
         nonce = 0;
-        if (ret) {
+        if (ret && isLowR) {
             vchSig.resize(nSigLen);
             return true;
         }
+        counter++;
     } while (true);
 }
 

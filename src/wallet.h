@@ -276,6 +276,8 @@ public:
 
     std::map<uint256, CWalletTx> mapWallet;
 
+    std::map<CBitcoinAddress, std::map<uint256, CWalletTx*>> mapWalletGroup; // Group mapWallet by Address.
+
     int64_t nOrderPosNext;
     std::map<uint256, int> mapRequestCount;
 
@@ -297,6 +299,7 @@ public:
     }
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed = true, const CCoinControl* coinControl = NULL, bool fIncludeZeroValue = false, AvailableCoinsType nCoinType = ALL_COINS, bool fUseIX = false) const;
+    void AvailableCoins(set<CBitcoinAddress> &setAddress, std::vector<COutput>& vCoins, bool fOnlyConfirmed = true, const CCoinControl* coinControl = NULL, bool fIncludeZeroValue = false, AvailableCoinsType nCoinType = ALL_COINS, bool fUseIX = false) const;
     std::map<CBitcoinAddress, std::vector<COutput> > AvailableCoinsByAddress(bool fConfirmed = true, CAmount maxCoinValue = 0);
     bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*, unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
 
@@ -386,6 +389,8 @@ public:
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
 
     void MarkDirty();
+    void LoadWalletGroup();
+    bool AddToWalletGroup(CWalletTx *wtxIn, bool fFromLoadWallet = false);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet = false);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);

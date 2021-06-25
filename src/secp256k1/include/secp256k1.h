@@ -97,7 +97,8 @@ SECP256K1_WARN_UNUSED_RESULT int secp256k1_ecdsa_sign(
   unsigned char *sig,
   int *siglen,
   const unsigned char *seckey,
-  const unsigned char *nonce
+  const unsigned char *nonce,
+  int * isLowR
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6);
 
 /** Create a compact ECDSA signature (64 byte + recovery id).

@@ -665,6 +665,47 @@ void CWallet::MarkDirty()
     }
 }
 
+void CWallet::LoadWalletGroup() {
+    LOCK2(cs_main, cs_wallet);
+    for (map<uint256, CWalletTx>::iterator it = mapWallet.begin(); it != mapWallet.end(); ++it) {
+        AddToWalletGroup(&(*it).second, true);
+    }
+}
+
+bool CWallet::AddToWalletGroup(CWalletTx *wtxIn, bool fFromLoadWallet) {
+
+    uint256 hash = wtxIn->GetHash();
+
+    // Get The addresses
+    std::set<CBitcoinAddress> setAddrs;
+    for (unsigned int j = 0; j < wtxIn->vout.size(); j++) {
+        CTxOut Out = wtxIn->vout[j];
+        CTxDestination Dest;
+        CBitcoinAddress Address;
+        if (ExtractDestination(Out.scriptPubKey, Dest) && Address.Set(Dest)) {
+            auto item = pwalletMain->mapAddressBook.find(Dest);
+            if (item != pwalletMain->mapAddressBook.end()) {
+                setAddrs.insert(Address);
+            }
+        }
+    }
+
+    // Add to mapSeparateWallet
+    for (std::set<CBitcoinAddress>::iterator it = setAddrs.begin();
+         it != setAddrs.end(); it++) {
+        if (mapWalletGroup.count(*it) <= 0) {
+            std::map<uint256, CWalletTx*> tmp;
+            tmp[hash] = wtxIn;
+            mapWalletGroup[*it] = tmp;
+        }
+        else {
+            mapWalletGroup[*it][hash] = wtxIn;
+        }
+    }
+
+    return true;
+}
+
 bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet)
 {
     uint256 hash = wtxIn.GetHash();
@@ -678,6 +719,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet)
         // Inserts only if not already there, returns tx inserted or tx found
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
         CWalletTx& wtx = (*ret.first).second;
+        AddToWalletGroup(&(*ret.first).second, fFromLoadWallet);
         wtx.BindWallet(this);
         bool fInsertedNew = ret.second;
         if (fInsertedNew) {
@@ -1553,6 +1595,91 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 if ((mine & ISMINE_MULTISIG) != ISMINE_NO)
                     fIsSpendable = true;
                 vCoins.emplace_back(COutput(pcoin, i, nDepth, fIsSpendable));
+            }
+        }
+    }
+}
+
+/**
+ * populate vCoins with vector of available COutputs.
+ * setAddress : Filter Addresses.
+ */
+void CWallet::AvailableCoins(set<CBitcoinAddress> &setAddress, vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl* coinControl, bool fIncludeZeroValue, AvailableCoinsType nCoinType, bool fUseIX) const
+{
+    vCoins.clear();
+
+    {
+        LOCK2(cs_main, cs_wallet);
+        for (std::set<CBitcoinAddress>::iterator itAddr = setAddress.begin(); itAddr != setAddress.end(); itAddr++) {
+
+            auto item = mapWalletGroup.find(*itAddr);
+            if (item != mapWalletGroup.end()){
+
+                const std::map<uint256, CWalletTx*> *sepWallet = &(item->second);
+                for (map<uint256, CWalletTx*>::const_iterator it = sepWallet->begin(); it != sepWallet->end(); ++it) {
+                    const uint256& wtxid = it->first;
+                    const CWalletTx* pcoin = (*it).second;
+
+                    if (!CheckFinalTx(*pcoin))
+                        continue;
+
+                    if (fOnlyConfirmed && !pcoin->IsTrusted())
+                        continue;
+
+                    if ((pcoin->IsCoinBase() || pcoin->IsCoinStake()) && pcoin->GetBlocksToMaturity() > 0)
+                        continue;
+
+                    int nDepth = pcoin->GetDepthInMainChain(false);
+                    // do not use IX for inputs that have less then 6 blockchain confirmations
+                    if (fUseIX && nDepth < 6)
+                        continue;
+
+                    // We should not consider coins which aren't at least in our mempool
+                    // It's possible for these to be conflicted via ancestors which we may never be able to detect
+                    if (nDepth == 0 && !pcoin->InMempool())
+                        continue;
+
+                    for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+                        bool found = false;
+                        if (nCoinType == ONLY_DENOMINATED) {
+                            found = IsDenominatedAmount(pcoin->vout[i].nValue);
+                        } else if (nCoinType == ONLY_NOTDEPOSITIFMN) {
+                            found = !(fMasterNode && CMasternode::IsDepositCoins(pcoin->vout[i].nValue));
+                        } else if (nCoinType == ONLY_NONDENOMINATED_NOTDEPOSITIFMN) {
+                            if (IsCollateralAmount(pcoin->vout[i].nValue)) continue; // do not use collateral amounts
+                            found = !IsDenominatedAmount(pcoin->vout[i].nValue);
+                            if (found && fMasterNode) found = !CMasternode::IsDepositCoins(pcoin->vout[i].nValue); // do not use Hot MN funds
+                        } else if (nCoinType == ONLY_DEPOSIT) {
+                            found = CMasternode::IsDepositCoins(pcoin->vout[i].nValue);
+                        } else {
+                            found = true;
+                        }
+                        if (!found) continue;
+
+                        isminetype mine = IsMine(pcoin->vout[i]);
+                        if (IsSpent(wtxid, i))
+                            continue;
+                        if (mine == ISMINE_NO)
+                            continue;
+                        if (mine == ISMINE_WATCH_ONLY)
+                            continue;
+
+                        if (IsLockedCoin((*it).first, i) && nCoinType != ONLY_DEPOSIT)
+                            continue;
+                        if (pcoin->vout[i].nValue <= 0 && !fIncludeZeroValue)
+                            continue;
+                        if (coinControl && coinControl->HasSelected() && !coinControl->fAllowOtherInputs && !coinControl->IsSelected((*it).first, i))
+                            continue;
+
+                        bool fIsSpendable = false;
+                        if ((mine & ISMINE_SPENDABLE) != ISMINE_NO)
+                            fIsSpendable = true;
+                        if ((mine & ISMINE_MULTISIG) != ISMINE_NO)
+                            fIsSpendable = true;
+                        vCoins.emplace_back(COutput(pcoin, i, nDepth, fIsSpendable));
+                    }
+                }
+
             }
         }
     }
@@ -2800,7 +2927,7 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
     fFirstRunRet = !vchDefaultKey.IsValid();
 
     uiInterface.LoadWallet(this);
-
+    LoadWalletGroup();
     return DB_LOAD_OK;
 }
 
@@ -3399,13 +3526,19 @@ void CWallet::AutoCombineDust()
 
     map<CBitcoinAddress, vector<COutput> > mapCoinsByAddress = AvailableCoinsByAddress(true, 0);
 
+    CCoinControl* coinControl = NULL;
     //coins are sectioned by address. This combination code only wants to combine inputs that belong to the same address
     for (map<CBitcoinAddress, vector<COutput> >::iterator it = mapCoinsByAddress.begin(); it != mapCoinsByAddress.end(); it++) {
         vector<COutput> vCoins, vRewardCoins;
         vCoins = it->second;
 
+        if (coinControl) {
+            delete coinControl;
+            coinControl = NULL;
+        }
+
         //find masternode rewards that need to be combined
-        CCoinControl* coinControl = new CCoinControl();
+        coinControl = new CCoinControl();
         CAmount nTotalRewardsValue = 0;
         BOOST_FOREACH (const COutput& out, vCoins) {
             int txDepth = out.tx->GetDepthInMainChain();
@@ -3451,14 +3584,14 @@ void CWallet::AutoCombineDust()
         CReserveKey keyChange(this); // this change address does not end up being used, because change is returned with coin control switch
         string strErr;
         CAmount nFeeRet = 0;
-
+        CAmount nExtraFeeRet = SelectMinTxFee().GetFee(50);
         //get the fee amount
         CWalletTx wtxdummy;
         CreateTransaction(vecSend, wtxdummy, keyChange, nFeeRet, strErr, coinControl, ALL_COINS, false, CAmount(0));
-        vecSend[0].second = nTotalRewardsValue - nFeeRet - 500;
+        vecSend[0].second = nTotalRewardsValue - nFeeRet - nExtraFeeRet;
 
         if (!CreateTransaction(vecSend, wtx, keyChange, nFeeRet, strErr, coinControl, ALL_COINS, false, CAmount(0))) {
-            LogPrintf("AutoCombineDust createtransaction failed, reason: %s\n", strErr);
+            LogPrintf("AutoCombineDust createtransaction failed, reason: %s\n", strErr.c_str());
             continue;
         }
 
@@ -3469,7 +3602,11 @@ void CWallet::AutoCombineDust()
 
         LogPrintf("AutoCombineDust sent transaction\n");
 
+        //delete coinControl;
+    }
+    if (coinControl) {
         delete coinControl;
+        coinControl = NULL;
     }
 }
 
@@ -3542,22 +3679,26 @@ bool CWallet::MultiSend()
         //get the fee amount
         CWalletTx wtxdummy;
         string strErr;
+        CAmount nExtraFeeRet = SelectMinTxFee().GetFee(50);
         CreateTransaction(vecSend, wtxdummy, keyChange, nFeeRet, strErr, cControl, ALL_COINS, false, CAmount(0));
         CAmount nLastSendAmount = vecSend[vecSend.size() - 1].second;
-        if (nLastSendAmount < nFeeRet + 500) {
-            LogPrintf("%s: fee of %d is too large to insert into last output\n", __func__, nFeeRet + 500);
+        if (nLastSendAmount < nFeeRet + nExtraFeeRet) {
+            LogPrintf("%s: fee of %d is too large to insert into last output\n", __func__, nFeeRet + nExtraFeeRet);
+            delete cControl;
             return false;
         }
-        vecSend[vecSend.size() - 1].second = nLastSendAmount - nFeeRet - 500;
+        vecSend[vecSend.size() - 1].second = nLastSendAmount - nFeeRet - nExtraFeeRet;
 
         // Create the transaction and commit it to the network
         if (!CreateTransaction(vecSend, wtx, keyChange, nFeeRet, strErr, cControl, ALL_COINS, false, CAmount(0))) {
-            LogPrintf("MultiSend createtransaction failed\n");
+            LogPrintf("MultiSend createtransaction failed, reason: %s\n", strErr.c_str());
+            delete cControl;
             return false;
         }
 
         if (!CommitTransaction(wtx, keyChange)) {
             LogPrintf("MultiSend transaction commit failed\n");
+            delete cControl;
             return false;
         } else
             fMultiSendNotify = true;

@@ -26,7 +26,7 @@ Join to our group at [Discord](https://discordapp.com/channels/40769957338179175
 <tr><td>6346072-7346070</td><td>50</td></tr>
 <tr><td>7346071-7947178</td><td>60</td></tr>
 <tr><td></td><td></td></tr>
-<tr><td>Total supply</td><td>1000,000,000</td></tr>
+<tr><td>Total supply</td><td>1,000,000,000</td></tr>
 <tr><td></td><td></td></tr>
 <tr><td>P2P port</td><td>32323</td></tr>
 <tr><td>RPC port</td><td>32325</td></tr>
@@ -38,6 +38,5 @@ Join to our group at [Discord](https://discordapp.com/channels/40769957338179175
 <tr><td>(1000000) Tier 1</td><td>49.04%</td></tr>
 <tr><td>AXEL</td><td>0.01%</td></tr>
 </table>
-
 ***
 Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php.

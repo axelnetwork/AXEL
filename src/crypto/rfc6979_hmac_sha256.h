@@ -24,6 +24,7 @@ public:
      * The message is assumed to be already hashed.
      */
     RFC6979_HMAC_SHA256(const unsigned char* key, size_t keylen, const unsigned char* msg, size_t msglen);
+    RFC6979_HMAC_SHA256(const unsigned char* key, size_t keylen, const unsigned char* msg, size_t msglen, const unsigned char* nonce, size_t noncelen);
 
     /**
      * Generate a byte array.

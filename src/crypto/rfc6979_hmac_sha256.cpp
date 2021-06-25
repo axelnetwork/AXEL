@@ -22,6 +22,26 @@ RFC6979_HMAC_SHA256::RFC6979_HMAC_SHA256(const unsigned char* key, size_t keylen
     CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Finalize(V);
 }
 
+RFC6979_HMAC_SHA256::RFC6979_HMAC_SHA256(const unsigned char* key, size_t keylen, const unsigned char* msg, size_t msglen, const unsigned char* nonce, size_t noncelen) : retry(false)
+{
+    memset(V, 0x01, sizeof(V));
+    memset(K, 0x00, sizeof(K));
+
+    if( nonce && noncelen > 0)
+        CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Write(zero, sizeof(zero)).Write(key, keylen).Write(msg, msglen).Write(nonce, noncelen).Finalize(K);
+    else
+        CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Write(zero, sizeof(zero)).Write(key, keylen).Write(msg, msglen).Finalize(K);
+
+    CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Finalize(V);
+
+    if( nonce && noncelen > 0)
+        CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Write(one, sizeof(one)).Write(key, keylen).Write(msg, msglen).Write(nonce, noncelen).Finalize(K);
+    else
+        CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Write(one, sizeof(one)).Write(key, keylen).Write(msg, msglen).Finalize(K);
+
+    CHMAC_SHA256(K, sizeof(K)).Write(V, sizeof(V)).Finalize(V);
+}
+
 RFC6979_HMAC_SHA256::~RFC6979_HMAC_SHA256()
 {
     memset(V, 0x01, sizeof(V));

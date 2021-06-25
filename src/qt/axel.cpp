@@ -637,8 +637,16 @@ int main(int argc, char* argv[])
 
     std::string networkID = Params().NetworkIDString();
     bool fPreProd = Params().IsPreProduction();
-    if (fPreProd) networkID += "-pre-prod";
-    QScopedPointer<const NetworkStyle> networkStyle(NetworkStyle::instantiate(QString::fromStdString(networkID)));
+    bool fCustom = Params().IsCustom();
+    std::string customName;
+    if (fCustom) {
+        networkID += "-custom";
+        customName = Params().CustomName();
+    }
+    else if (fPreProd) {
+        networkID += "-pre-prod";
+    }
+    QScopedPointer<const NetworkStyle> networkStyle(NetworkStyle::instantiate(QString::fromStdString(networkID), QString::fromStdString(customName)));
     assert(!networkStyle.isNull());
     // Allow for separate UI settings for testnets
     QApplication::setApplicationName(networkStyle->getAppName());

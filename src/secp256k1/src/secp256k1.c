@@ -72,7 +72,7 @@ end:
     return ret;
 }
 
-int secp256k1_ecdsa_sign(const unsigned char *message, int messagelen, unsigned char *signature, int *signaturelen, const unsigned char *seckey, const unsigned char *nonce) {
+int secp256k1_ecdsa_sign(const unsigned char *message, int messagelen, unsigned char *signature, int *signaturelen, const unsigned char *seckey, const unsigned char *nonce, int * isLowR) {
     DEBUG_CHECK(secp256k1_ecmult_gen_consts != NULL);
     DEBUG_CHECK(message != NULL);
     DEBUG_CHECK(messagelen <= 32);
@@ -95,6 +95,11 @@ int secp256k1_ecdsa_sign(const unsigned char *message, int messagelen, unsigned 
     secp256k1_ecdsa_sig_t sig;
     if (ret) {
         ret = secp256k1_ecdsa_sig_sign(&sig, &sec, &msg, &non, NULL);
+    }
+    if (isLowR) {
+        unsigned char r[32] = {0};
+        secp256k1_scalar_get_b32(r, &sig.r);
+        *isLowR = (r[0] < 0x80)? 1 : 0;
     }
     if (ret) {
         secp256k1_ecdsa_sig_serialize(signature, signaturelen, &sig);

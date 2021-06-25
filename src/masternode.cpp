@@ -1184,4 +1184,5 @@ bool CMasternodeAuth::Sign(std::vector<unsigned char>& vchSigAuth, std::string& 
     }
     vchSigWithPreFix = CMasternodeAuth::AddPreFix(version, level, vchSignature);
     vchSigAuth = vchSigWithPreFix;
+    return true;
 }

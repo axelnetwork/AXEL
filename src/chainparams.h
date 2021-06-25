@@ -65,6 +65,11 @@ public:
     const MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     const std::vector<unsigned char>& GMKey() const { return vGMPubKey; }
+    const void SetGenesis(std::string strTimestamp, uint32_t nTime, uint32_t bits, uint32_t nNonce);
+    const void SetP2pPort(int port);
+    const void SetPchMessageStart(uint32_t msgHead);
+    const void SetSporkKey(std::string pubKey);
+    const void SetCustomName(std::string name) {strCustomName = name;};
 
     // const std::vector<unsigned char>& axelDevKey() const { return vaxelDevKey; }
     // const std::vector<unsigned char>& axelFundKey() const { return vaxelFundKey; }
@@ -118,7 +123,9 @@ public:
     std::string SporkKey() const { return strSporkKey; }
     std::string ObfuscationPoolDummyAddress() const { return strObfuscationPoolDummyAddress; }
     CBaseChainParams::Network NetworkID() const { return networkID; }
-    bool IsPreProduction() const { return fPreProduction; };
+    bool IsPreProduction() const { return nSubtype == 1; };
+    bool IsCustom() const { return nSubtype == 2; };
+    std::string CustomName() const { return strCustomName; };
 
     /** Height or Time Based Activations **/
     //todo: ModifierUpgradeBlock affect POS
@@ -130,7 +137,7 @@ public:
 
 
 protected:
-    CChainParams() { fPreProduction = false; }
+    CChainParams() { nSubtype = 0; }
 
     uint256 hashGenesisBlock;
     MessageStartChars pchMessageStart;
@@ -162,7 +169,8 @@ protected:
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     CBaseChainParams::Network networkID;
-    bool fPreProduction; // It can be set as "true" only in "mainnet" mode
+    int nSubtype; // It can be set as "true" only in "mainnet" mode 0: product 1: pre-product 2:costum
+    std::string strCustomName;
     std::string strNetworkID;
     CBlock genesis;
     std::vector<CAddress> vFixedSeeds;

@@ -258,7 +258,12 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
-    pwalletMain->AvailableCoins(vecOutputs, false);
+    if (setAddress.size()) {
+        pwalletMain->AvailableCoins(setAddress, vecOutputs, false);
+    }
+    else {
+        pwalletMain->AvailableCoins(vecOutputs, false);
+    }
     BOOST_FOREACH (const COutput& out, vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
@@ -280,8 +285,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
-            if (pwalletMain->mapAddressBook.count(address))
+            auto item = pwalletMain->mapAddressBook.find(address);
+            if (item != pwalletMain->mapAddressBook.end()) {
                 entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
+            }
         }
         entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
         if (pk.IsPayToScriptHash()) {

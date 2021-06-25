@@ -935,7 +935,7 @@ void test_ecdsa_end_to_end(void) {
     while(1) {
         unsigned char rnd[32];
         secp256k1_rand256_test(rnd);
-        if (secp256k1_ecdsa_sign(message, 32, signature, &signaturelen, privkey, rnd) == 1) {
+        if (secp256k1_ecdsa_sign(message, 32, signature, &signaturelen, privkey, rnd, NULL) == 1) {
             break;
         }
     }

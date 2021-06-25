@@ -87,6 +87,9 @@ static const Checkpoints::CCheckpointData data = {
 static Checkpoints::MapCheckpoints mapCheckpointsPreProd = boost::assign::map_list_of(0, uint256("0x001"));
 static const Checkpoints::CCheckpointData dataPreProd = {&mapCheckpointsPreProd, 1549526523, 0, 250};
 
+static Checkpoints::MapCheckpoints mapCheckpointsCustom = boost::assign::map_list_of(0, uint256("0x001"));
+static const Checkpoints::CCheckpointData dataCustom = {&mapCheckpointsCustom, 1549526523, 0, 250};
+
 static Checkpoints::MapCheckpoints mapCheckpointsTestnet = boost::assign::map_list_of(0, uint256("0x001"));
 static const Checkpoints::CCheckpointData dataTestnet = {&mapCheckpointsTestnet, 1549526525, 0, 250};
 
@@ -223,13 +226,21 @@ public:
 
     const Checkpoints::CCheckpointData& Checkpoints() const
     {
-        return (!fPreProduction)? data : dataPreProd;
+        if (nSubtype == 1) {
+            return dataPreProd;
+        }
+        else if(nSubtype == 2) {
+            return dataCustom;
+        }
+        else{
+            return data;
+        }
     }
 
     const void SetAsPreProduction()
     {
-        if (!fPreProduction) {
-            fPreProduction = true;
+        if (!nSubtype) {
+            nSubtype = 1;
 
             vFixedSeeds.clear();
             vSeeds.clear();
@@ -263,6 +274,46 @@ public:
             assert(genesis.hashMerkleRoot == uint256("b2dd71b74d43796f5dcc42bf57306665d43e5cb6ca79f869a186fe1e84ccf9ec"));
             assert(hashGenesisBlock == uint256("0000058eaf0917fe4f13c6db7138370c25bc824582c0de6c0a1e0b571f41c765"));
         }
+    }
+
+    const void SetGenesis(std::string strTimestamp, uint32_t nTime, uint32_t bits, uint32_t nNonce)
+    {
+        nSubtype = 2;
+
+        vFixedSeeds.clear();
+        vSeeds.clear();
+
+        CMutableTransaction txNew;
+        genesis.SetNull();
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << vector<unsigned char>(strTimestamp.begin(), strTimestamp.end());
+        txNew.vout[0].nValue = 0 * COIN;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex("04fed4284f0e493cb41b389b9d262066c05edd5f524b64ea2ee6d7b8aa0658f67ff98df15895e0cae5702ab31712da0453f50e931dc1c1bc5d1eba88d09d20b5b3") << OP_CHECKSIG;
+        txNew.blob = "Genesis Tx";
+        genesis.vtx.clear();
+        genesis.vtx.push_back(txNew);
+        genesis.hashPrevBlock = 0;
+        genesis.hashMerkleRoot = genesis.BuildMerkleTree();
+        genesis.nVersion = 1;
+        genesis.nTime = nTime; // Thu, 25 Aug 2002 03:28:00 GMT
+        genesis.nBits = bits;
+        genesis.nNonce = nNonce;
+
+        hashGenesisBlock = genesis.GetHash();
+    }
+    const void SetP2pPort(int port) {
+        nDefaultPort = port;
+    }
+    const void SetPchMessageStart(uint32_t msgHead) {
+        pchMessageStart[0] = (unsigned char)((0xFF000000 & msgHead) >> 24);
+        pchMessageStart[1] = (unsigned char)((0xFF0000 & msgHead) >> 16);
+        pchMessageStart[2] = (unsigned char)((0xFF00 & msgHead) >> 8);
+        pchMessageStart[3] = (unsigned char)(0xFF & msgHead);
+        int i = 0;
+    }
+    const void SetSporkKey(std::string pubKey) {
+        strSporkKey = pubKey;
     }
 };
 static CMainParams mainParams;
@@ -473,8 +524,30 @@ bool SelectParamsFromCommandLine()
     if (network == CBaseChainParams::MAX_NETWORK_TYPES)
         return false;
 
-    bool fPreProd = GetBoolArg("-preprod", false);
-    if (fPreProd) mainParams.SetAsPreProduction();
+    if (CBaseChainParams::MAIN == network) {
+        bool fPreProd = GetBoolArg("-preprod", false);
+        bool fCustomMainNet = GetBoolArg("-custommainnet", false);
+        if (fCustomMainNet){
+            mainParams.SetGenesis(GetArg("-cmn_pszts", "AXEL @ 7 Feb 2019: a rev0lu+iVonary new decentral1z@d & distribut@d NETVV0RK"),
+                                    (uint32_t)GetArg("-cmn_ts", 1549526523),
+                                    (uint32_t)GetArg("-cmn_bits", 504365040),
+                                    (uint32_t)GetArg("-cmn_nonce", 0x2f95b));
+
+            int port = GetArg("-cmn_port", 0);
+            if (port > 0) mainParams.SetP2pPort(port);
+
+            std::string name = GetArg("-cmn_name", "");
+            if (!name.empty()) mainParams.SetCustomName(name);
+
+            mainParams.SetPchMessageStart((uint32_t)GetArg("-cmn_msghead", 0x23322552));
+
+            std::string strSporkPubKey = GetArg("-cmn_sporkkey", "");
+            if (!strSporkPubKey.empty()) mainParams.SetSporkKey(strSporkPubKey);
+        }
+        else if (fPreProd) {
+            mainParams.SetAsPreProduction();
+        }
+    }
 
     SelectParams(network);
     return true;
