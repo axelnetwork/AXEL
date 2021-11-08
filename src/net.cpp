@@ -2009,7 +2009,7 @@ void CNode::AskFor(const CInv& inv)
         nRequestTime = it->second;
     else
         nRequestTime = 0;
-    LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime / 1000000), id);
+    LogPrint("net", "askfor %s (%s).%d peer=%d\n", inv.ToShortString(), DateTimeStrFormat("%H:%M:%S", nRequestTime / 1000000), nRequestTime%1000000, id);
 
     // Make sure not to reuse time indexes to keep things in the same order
     int64_t nNow = GetTimeMicros() - 1000000;
@@ -2071,7 +2071,7 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     assert(ssSend.size() >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
     memcpy((char*)&ssSend[CMessageHeader::CHECKSUM_OFFSET], &nChecksum, sizeof(nChecksum));
 
-    LogPrint("net", "(%d bytes) peer=%d\n", nSize, id);
+    LogPrint("net", "%dB peer=%d\n", nSize, id);
 
     std::deque<CSerializeData>::iterator it = vSendMsg.insert(vSendMsg.end(), CSerializeData());
     ssSend.GetAndClear(*it);

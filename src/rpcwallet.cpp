@@ -2116,11 +2116,16 @@ UniValue autocombinerewards(const UniValue& params, bool fHelp)
     CAmount nThreshold = 0;
     int nLimit = 0;
 
-    if (fEnable)
+    if (fEnable) {
         nThreshold = params[1].get_int();
-    if (params.size() == 3)
+        if (nThreshold > 5000)
+           throw runtime_error("Threshold amount should less than 5000\n");
+    }
+    if (params.size() == 3) {
         nLimit = params[2].get_int();
-
+        if (nLimit > 5000)
+           throw runtime_error("Limit autocombine input confirmation should less than 5000\n");
+    }
     pwalletMain->fCombineDust = fEnable;
     pwalletMain->nAutoCombineThreshold = nThreshold;
     pwalletMain->nAutoCombineLimit = nLimit;

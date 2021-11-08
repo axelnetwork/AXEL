@@ -71,12 +71,13 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
         (592871, uint256("c657dedd3a1685d730ce1a15e591db79a798221ec02d70bf2c8fc0086cc2fc1d"))
         (784965, uint256("98281f5188b2abb99b5735ef59f965735a09d349865c473c3c3a15bc4dcc1131"))
         (850210, uint256("e301faf519893eff7a531cab010339702cdd89ab693a55210bbc90312a9d398c"))
+        (1148720, uint256("64c6519669828c238c6c2130a51bbba613f42e427a76b1f08a76c41dab13be2f"))
     ;
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1614672840,    // www.epochconverter.com
-    1963548,
+    1632809296,    // www.epochconverter.com
+    2742338,
     2000
     // 1549526525, // * UNIX timestamp of last checkpoint block
     // 0,          // * total number of transactions between genesis and last checkpoint
@@ -103,7 +104,13 @@ static MapBlockAddr data_mainnet_axel_addrs[] =
     {677401, "AZPnB44JLDovWHhgnhrCHu5nt6m9TerNZu"},
     {720601, "ASuUTnCDEHyaJTMxu5rjX1ZFPhJ33ZkrAE"},
     {763801, "AV7j1P49x8Yo8p2rQ2JFxJDd8LM7DByjLa"},
-    {807001, "AKHHwC7C1jPWaQuZ3zFRnb7hd2LD1vQPYQ"}
+    {807001, "AKHHwC7C1jPWaQuZ3zFRnb7hd2LD1vQPYQ"},
+    {1195801, "AVKVZ5zJgZqRgVWUwEUf2N62ffmf6R2NXK"},
+    {1239001, "ALZjQPMiFuVxeEYKvMr14RzKGfN8kkywwb"},
+    {1282201, "AFwWzmn6wC1cXsaZZKdMugZUaLVzPYpBLq"},
+    {1325401, "Add7yb3TCFh9qjQaYAN6qy22udcWhijN9q"},
+    {1368601, "Aax3sM96DfHa2Ldw6crYLznBjvkonM5EHf"},
+    {1411801, "AP9q8wcqTQs7wgemqv9ADoWV4QRG2eHadJ"}
 };
 
 static MapBlockAddr data_testnet_axel_addrs[] =

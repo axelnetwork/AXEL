@@ -256,7 +256,7 @@ QString TransactionDesc::toHTML(CWallet* wallet, CWalletTx& wtx, TransactionReco
 
     //QString txIDWithHref = "<a href=\"https://go.axel.network/transactions/?transaction_hash=" + rec->getTxID() + "&view=public" + "\">" + rec->getTxID() + "</a>";
 	QString txIDWithHref = "<a href=\"https://go.axel.network/#/transaction/" + rec->getTxID() + "\">" + rec->getTxID() + "</a>";
-	if( Params().NetworkID() == CBaseChainParams::MAIN && !GetBoolArg("-preprod", false))
+	if( Params().NetworkID() == CBaseChainParams::MAIN && !GetBoolArg("-preprod", false) && !GetBoolArg("-custommainnet", false))
     	strHTML += "<b>" + tr("Transaction ID") + ":</b> " + txIDWithHref + "<br>";
 	else
 		strHTML += "<b>" + tr("Transaction ID") + ":</b> " + rec->getTxID() + "<br>";

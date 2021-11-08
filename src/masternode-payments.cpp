@@ -206,7 +206,7 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
 
         pfrom->FulfilledRequest("mnget");
         masternodePayments.Sync(pfrom, nCountNeeded);
-        LogPrint("mnpayments", "mnget - Sent Masternode winners to peer %i\n", pfrom->GetId());
+        LogPrint("mnpayments", "mnget - Sent MN winners to peer %i\n", pfrom->GetId());
     } else
 
     if (strCommand == "mnw") { //Masternode Payments Declare Winner
@@ -277,7 +277,7 @@ void CMasternodePayments::ProcessMessageMasternodePayments(CNode* pfrom, std::st
             return;
         }
 
-        LogPrint("mnpayments", "mnw - winning vote - to Addr %s Height %d bestHeight %d - from %s\n", payee_addr.ToString().c_str(), winner.nBlockHeight, nHeight, winner.vinMasternode.prevout.ToStringShort());
+        LogPrint("mnpayments", "mnw - vote to %s H %d bestH %d - from %s\n", payee_addr.ToString().c_str(), winner.nBlockHeight, nHeight, winner.vinMasternode.prevout.ToStringShort());
 
         if (masternodePayments.AddWinningMasternode(winner)) {
             //LogPrintf("add winner %s\n", winner.ToString());
@@ -535,7 +535,7 @@ void CMasternodePayments::CleanPaymentList()
         CMasternodePaymentWinner winner = it->second;
 
         if (nHeight - winner.nBlockHeight > nLimit) {
-            LogPrint("mnpayments", "CMasternodePayments::CleanPaymentList - Removing old Masternode payment - block %d\n", winner.nBlockHeight);
+            LogPrint("mnpayments", "CMPM::CPL - Removing old MN payment - block %d\n", winner.nBlockHeight);
             masternodeSync.mapSeenSyncMNW.erase(it->first);
             mapMasternodeBlocks.erase(winner.nBlockHeight);
             it = mapMasternodePayeeVotes.erase(it);

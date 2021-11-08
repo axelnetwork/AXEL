@@ -144,7 +144,9 @@ public:
     bool IsKnownType() const;
     bool IsMasterNodeType() const;
     const char* GetCommand() const;
+    const char* GetShortCommand() const;
     std::string ToString() const;
+    std::string ToShortString() const;
 
     // TODO: make private (improves encapsulation)
 public:

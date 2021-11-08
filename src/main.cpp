@@ -4957,7 +4957,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 {
     RandAddSeedPerfmon();
     if (fDebug)
-        LogPrintf("received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
+        LogPrintf("received: %s %uB peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
     if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0) {
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
@@ -5170,7 +5170,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             pfrom->AddInventoryKnown(inv);
 
             bool fAlreadyHave = AlreadyHave(inv);
-            LogPrint("net", "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id);
+            LogPrint("net", "got inv: %s  %s peer=%d\n", inv.ToShortString(), fAlreadyHave ? "have" : "new", pfrom->id);
 
             if (!fAlreadyHave && !fImporting && !fReindex && inv.type != MSG_BLOCK)
                 pfrom->AskFor(inv);
@@ -6085,7 +6085,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         const CInv& inv = pto->mapAskFor.begin()->second;
         if (!AlreadyHave(inv)) {
             if (fDebug)
-                LogPrint("net", "Requesting %s peer=%d\n", inv.ToString(), pto->id);
+                LogPrint("net", "Req %s peer=%d\n", inv.ToShortString(), pto->id);
             vGetData.push_back(inv);
             if (vGetData.size() >= 1000) {
                 pto->PushMessage("getdata", vGetData);

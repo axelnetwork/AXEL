@@ -31,6 +31,24 @@ static const char* ppszTypeName[] =
         "notify"
 };
 
+static const char* ppszShortTypeName[] =
+{
+        "ERROR",
+        "tx",
+        "block",
+        "FilB",
+        "TxLB",
+        "TxLV",
+        "spork",
+        "mnw",
+        "mna",
+        "mnp",
+        "dstx",
+        "mnav2",
+        "mnpv2",
+        "notify"
+};
+
 CMessageHeader::CMessageHeader()
 {
     memcpy(pchMessageStart, Params().MessageStart(), MESSAGE_START_SIZE);
@@ -151,7 +169,23 @@ const char* CInv::GetCommand() const
     return ppszTypeName[type];
 }
 
+const char* CInv::GetShortCommand() const
+{
+    if (!IsKnownType()) {
+        LogPrint("net", "CInv::GetCommand() : type=%d unknown type", type);
+        return "UNKNOWN";
+    }
+
+    return ppszShortTypeName[type];
+}
+
 std::string CInv::ToString() const
 {
     return strprintf("%s %s", GetCommand(), hash.ToString());
 }
+
+std::string CInv::ToShortString() const
+{
+    return strprintf("%s %.*s", GetShortCommand(), hash.ToString().length()/2, hash.ToString());
+}
+

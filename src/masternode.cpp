@@ -43,9 +43,12 @@ bool GetBlockHash(uint256& hash, int nBlockHeight)
         if(BlockReading->nHeight != nBlockHeight)
             continue;
 
-        auto ins_res = mapCacheBlockHashes.emplace(nBlockHeight, BlockReading->GetBlockHash());
-
-        hash = ins_res.first->second;
+        if(nBlockHeight < active_tip->nHeight - 10) {
+            auto ins_res = mapCacheBlockHashes.emplace(nBlockHeight, BlockReading->GetBlockHash());
+            hash = ins_res.first->second;
+        } else {
+            hash = BlockReading->GetBlockHash();
+        }
 
         return true;
     }
@@ -930,7 +933,8 @@ bool CMasternodePing::VerifyRes(CPubKey& pubKeyMasternode, std::vector<unsigned 
                     }
                 }
 
-                LogPrintf("CMasternodePing::VerifyRes - VerifyCkRes() passed-tier is %d\n", mnlevel);
+                LogPrint("masternode", "CMasternodePing::VerifyRes - VerifyCkRes() passed-tier is %d\n", mnlevel);
+
             }
         }
     }
@@ -941,18 +945,18 @@ bool CMasternodePing::VerifyRes(CPubKey& pubKeyMasternode, std::vector<unsigned 
 bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgnoreSigTime, bool fNoRelay, bool fcheckUidEmpty)
 {
     if (sigTime > GetAdjustedTime() + 60 * 60) {
-        LogPrintf("CMasternodePing::CheckAndUpdate - Signature rejected, too far into the future %s\n", vin.prevout.hash.ToString());
+        LogPrintf("CMP::Check - Signature rejected, too far into the future %s\n", vin.prevout.hash.ToString());
         nDos = 1;
         return false;
     }
 
     if (sigTime <= GetAdjustedTime() - 60 * 60) {
-        LogPrintf("CMasternodePing::CheckAndUpdate - Signature rejected, too far into the past %s - %d %d \n", vin.prevout.hash.ToString(), sigTime, GetAdjustedTime());
+        LogPrintf("CMP::Check - Signature rejected, too far into the past %s - %d %d \n", vin.prevout.hash.ToString(), sigTime, GetAdjustedTime());
         nDos = 1;
         return false;
     }
 
-    LogPrint("masternode", "CMasternodePing::CheckAndUpdate - New Ping - %s - %lli\n", blockHash.ToString(), sigTime);
+    LogPrint("masternode", "CMP::Check - New Ping - %s - %lli\n", blockHash.ToString(), sigTime);
 
     // see if we have this Masternode
     CMasternode* pmn = mnodeman.Find(vin);
@@ -966,7 +970,7 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgno
         if (fRequireEnabled && !pmn->IsEnabled()) return false;
 
         if (IsSporkActive(SPORK_15_MN_V2) && (pmn->mnbVer == MASTERNODE_V1)) {
-            LogPrintf("CMasternodePing::CheckAndUpdate - mn version is V1 in current masternode list.\n");
+            LogPrintf("CMP::Check - mn version is V1 in current masternode list.\n");
             return false;
         }
 
@@ -976,11 +980,11 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgno
             std::string errorMessage;
             CMasternodeAuth auth(pmn->sigAuth, pmn->pubKeyMasternode, vin.prevout);
             if (!auth.CheckSignature(errorMessage)) {
-                LogPrintf("CMasternodePing::CheckAndUpdate - %s\n", errorMessage);
+                LogPrintf("CMP::Check - %s\n", errorMessage);
                 mnodeman.Remove(pmn->vin);
                 return false;
             }
-            LogPrintf("CMasternodePing::CheckAndUpdate() - spork key auth signature success, auth level is %d\n", auth.GetLevel());
+            LogPrint("masternode", "CMP::Check - spork key auth signature success, auth level is %d\n", auth.GetLevel());
         }
 
         if (IsSporkActive(SPORK_15_MN_V2) && IsSporkActive(SPORK_16_RES_CK)) {
@@ -1000,13 +1004,13 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgno
         if (fIgnoreSigTime || (!pmn->IsPingedWithin(MASTERNODE_MIN_MNP_SECONDS - 60, sigTime))) {
             std::string strMessage;
             if (!BuildMessage(strMessage)){
-                LogPrintf("CMasternodePing::CheckAndUpdate() - Build message error.\n");
+                LogPrintf("CMP::Check - Build message error.\n");
                 return false;
             }
 
             std::string errorMessage = "";
             if (!obfuScationSigner.VerifyMessage(pmn->pubKeyMasternode, vchSig, strMessage, errorMessage)) {
-                LogPrintf("CMasternodePing::CheckAndUpdate - Got bad Masternode address signature %s\n", vin.prevout.hash.ToString());
+                LogPrintf("CMP::Check - Got bad Masternode address signature %s\n", vin.prevout.hash.ToString());
                 nDos = 33;
                 return false;
             }
@@ -1014,14 +1018,14 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgno
             BlockMap::iterator mi = mapBlockIndex.find(blockHash);
             if (mi != mapBlockIndex.end() && (*mi).second) {
                 if ((*mi).second->nHeight < chainActive.Height() - 24) {
-                    LogPrintf("CMasternodePing::CheckAndUpdate - Masternode %s block hash %s is too old\n", vin.prevout.hash.ToString(), blockHash.ToString());
+                    LogPrintf("CMP::Check - Masternode %s block hash %s is too old\n", vin.prevout.hash.ToString(), blockHash.ToString());
                     // Do nothing here (no Masternode update, no mnping relay)
                     // Let this node to be visible but fail to accept mnping
 
                     return false;
                 }
             } else {
-                if (fDebug) LogPrintf("CMasternodePing::CheckAndUpdate - Masternode %s block hash %s is unknown\n", vin.prevout.hash.ToString(), blockHash.ToString());
+                if (fDebug) LogPrintf("CMP::Check - Masternode %s block hash %s is unknown\n", vin.prevout.hash.ToString(), blockHash.ToString());
                 // maybe we stuck so we shouldn't ban this node, just fail to accept it
                 // TODO: or should we also request this block?
 
@@ -1047,16 +1051,16 @@ bool CMasternodePing::CheckAndUpdate(int& nDos, bool fRequireEnabled, bool fIgno
             pmn->Check(true);
             if (!pmn->IsEnabled()) return false;
 
-            LogPrint("masternode", "CMasternodePing::CheckAndUpdate - Masternode ping accepted, vin: %s\n", vin.prevout.hash.ToString());
+            LogPrint("masternode", "CMP::Check - MN ping accepted, vin: %s\n", vin.prevout.hash.ToString());
 
             if (!fNoRelay) Relay();
             return true;
         }
-        LogPrint("masternode", "CMasternodePing::CheckAndUpdate - Masternode ping arrived too early, vin: %s\n", vin.prevout.hash.ToString());
+        LogPrint("masternode", "CMP::Check - MN ping arrived too early, vin: %s\n", vin.prevout.hash.ToString());
         //nDos = 1; //disable, this is happening frequently and causing banned peers
         return false;
     }
-    LogPrint("masternode", "CMasternodePing::CheckAndUpdate - Couldn't find compatible Masternode entry, vin: %s\n", vin.prevout.hash.ToString());
+    LogPrint("masternode", "CMP::Check - Couldn't find compatible MN entry, vin: %s\n", vin.prevout.hash.ToString());
 
     return false;
 }

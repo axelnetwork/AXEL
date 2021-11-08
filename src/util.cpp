@@ -255,6 +255,8 @@ bool LogAcceptCategory(const char* category)
 
 int LogPrintStr(const std::string& str)
 {
+    static int64_t lastLogTime = 0;
+
     int ret = 0; // Returns total number of characters written
     if (fPrintToConsole) {
         // print to console
@@ -272,14 +274,20 @@ int LogPrintStr(const std::string& str)
         // reopen the log file, if requested
         if (fReopenDebugLog) {
             fReopenDebugLog = false;
+            lastLogTime = 0;
             boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
             if (freopen(pathDebug.string().c_str(), "a", fileout) != NULL)
                 setbuf(fileout, NULL); // unbuffered
         }
 
         // Debug print useful for profiling
-        if (fLogTimestamps && fStartedNewLine)
-            ret += fprintf(fileout, "%s ", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
+        if (fLogTimestamps && fStartedNewLine) {
+            int64_t currentTime = GetTime();
+            if (currentTime != lastLogTime) {
+                ret += fprintf(fileout, "TMMK: %s \n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", currentTime).c_str());
+                lastLogTime = currentTime;
+            }
+        }
         if (!str.empty() && str[str.size() - 1] == '\n')
             fStartedNewLine = true;
         else
