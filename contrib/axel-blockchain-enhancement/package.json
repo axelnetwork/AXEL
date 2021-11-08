@@ -6,6 +6,6 @@
     "dependencies": {
         "argv": "0.0.2",
         "axios": ">=0.21.1",
-        "url-parse": "1.4.7"
+        "url-parse": ">=1.5.2"
     }
 }
